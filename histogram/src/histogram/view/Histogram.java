@@ -8,6 +8,8 @@ import java.util.stream.IntStream;
 
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.Chart;
+import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart.Data;
 import javafx.scene.chart.XYChart.Series;
@@ -17,34 +19,57 @@ import model.event.TimelineEventsGroup;
 
 public class Histogram extends GridPane {
 	private final List<TimelineEvent> events;
-	private final BarChart<String, Number> barChart;
 
-	private Histogram(List<TimelineEvent> events) {
+	private Histogram(List<TimelineEvent> events, boolean isBarChart) {
 		this.events = events;
-
+		
 		CategoryAxis xAxis = new CategoryAxis();
 
 		NumberAxis yAxis = new NumberAxis();
+		
+		if (isBarChart) {
 
-		barChart = new BarChart<>(xAxis, yAxis);
-
-		add(barChart, 0, 0);
-		setFillHeight(barChart, true);
-		setFillWidth(barChart, true);
-
-		barChart.setTitle("Histogram");
-		xAxis.setLabel("Event time ranges");
-		yAxis.setLabel("Number of occurences");
-
-		Series<String, Number> series = new Series<>();
-
-		series.setName("events series");
-
-		groupEvents(events).forEach(
-				eventsGroup -> series.getData().add(
-						new Data<String, Number>(eventsGroup.toString(), eventsGroup.getEventsCount())));
-
-		barChart.getData().add(series);
+			BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
+			
+			add(barChart, 0, 0);
+			setFillHeight(barChart, true);
+			setFillWidth(barChart, true);
+	
+			barChart.setTitle("Histogram");
+			xAxis.setLabel("Event time ranges");
+			yAxis.setLabel("Number of occurences");
+	
+			Series<String, Number> series = new Series<>();
+	
+			series.setName("events series");
+	
+			groupEvents(events).forEach(
+					eventsGroup -> series.getData().add(
+							new Data<String, Number>(eventsGroup.toString(), eventsGroup.getEventsCount())));
+	
+			barChart.getData().add(series);
+		} else {
+			
+			LineChart<String, Number> lineChart = new LineChart(xAxis, yAxis);
+	
+			add(lineChart, 0, 0);
+			setFillHeight(lineChart, true);
+			setFillWidth(lineChart, true);
+	
+			lineChart.setTitle("Histogram");
+			xAxis.setLabel("Event time ranges");
+			yAxis.setLabel("Number of occurences");
+	
+			Series<String, Number> series = new Series<>();
+	
+			series.setName("events series");
+	
+			groupEvents(events).forEach(
+					eventsGroup -> series.getData().add(
+							new Data<String, Number>(eventsGroup.toString(), eventsGroup.getEventsCount())));
+	
+			lineChart.getData().add(series);
+		}
 
 	}
 
@@ -85,7 +110,7 @@ public class Histogram extends GridPane {
 
 	}
 
-	public static Histogram newInstance(List<TimelineEvent> events) {
-		return new Histogram(events);
+	public static Histogram newInstance(List<TimelineEvent> events, boolean barChart) {
+		return new Histogram(events, barChart);
 	}
 }
