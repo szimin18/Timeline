@@ -5,10 +5,7 @@ import histogram.view.Histogram;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.sun.xml.internal.ws.api.Cancelable;
-
 import javafx.application.Application;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -36,7 +33,8 @@ public class MainWindow extends Application {
 
 		List<TimelineEvent> events = RandomDataGenerator.generateRandomEvents(now.minusYears(1), now, 10000);
 
-		Histogram histogram = Histogram.newInstance(events);
+		Histogram histogram = Histogram.newInstance(events, true);
+		Histogram histogram2 = Histogram.newInstance(events, false);
 		
 		Canvas canvas = new Canvas(300, 300);
 		
@@ -45,7 +43,7 @@ public class MainWindow extends Application {
 		graphicsContext.strokePolyline(new double[] {20, 50, 50, 20}, new double[] {20, 50, 250, 280}, 4);
 		graphicsContext.strokePolyline(new double[] {280, 250, 250, 280}, new double[] {20, 50, 250, 280}, 4);
 		
-		root.getChildren().addAll(histogram, canvas);
+		root.getChildren().addAll(histogram, histogram2, canvas);
 
 		primaryStage.setScene(new Scene(root, 1000, 1000));
 		primaryStage.show();
