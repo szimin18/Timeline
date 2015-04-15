@@ -34,14 +34,15 @@ public class MainWindow extends Application {
 
 		List<TimelineEvent> events = RandomDataGenerator.generateRandomEvents(now.minusYears(1), now, 10000);
 
-		Histogram histogram = Histogram.newInstance(events);
+		Histogram histogram = Histogram.newInstance(events, true);
+		Histogram histogram2 = Histogram.newInstance(events, false);
 		
 		Selector selector = new Selector(500, 227, 27);
 		
 		StackPane stackPane = new StackPane();
 		stackPane.setAlignment(Pos.TOP_LEFT);
 		stackPane.getChildren().addAll(histogram, selector);
-		root.getChildren().add(stackPane);
+		root.getChildren().addAll(stackPane, histogram2);
 
 		primaryStage.setScene(new Scene(root, 800, 800));
 		primaryStage.show();
