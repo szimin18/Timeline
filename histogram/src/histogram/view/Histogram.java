@@ -48,6 +48,8 @@ public class Histogram extends GridPane {
 							new Data<String, Number>(eventsGroup.toString(), eventsGroup.getEventsCount())));
 	
 			barChart.getData().add(series);
+			barChart.setBarGap(0);
+			barChart.setCategoryGap(0);
 		} else {
 			
 			LineChart<String, Number> lineChart = new LineChart(xAxis, yAxis);
@@ -70,7 +72,6 @@ public class Histogram extends GridPane {
 	
 			lineChart.getData().add(series);
 		}
-
 	}
 
 	private static List<TimelineEventsGroup> groupEvents(List<TimelineEvent> events) {

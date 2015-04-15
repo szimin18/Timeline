@@ -6,13 +6,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import javafx.application.Application;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.event.TimelineEvent;
 import presenter.generator.RandomDataGenerator;
+import presenter.selector.Selector;
 
 public class MainWindow extends Application {
 
@@ -36,16 +37,14 @@ public class MainWindow extends Application {
 		Histogram histogram = Histogram.newInstance(events, true);
 		Histogram histogram2 = Histogram.newInstance(events, false);
 		
-		Canvas canvas = new Canvas(300, 300);
+		Selector selector = new Selector(500, 227, 27);
 		
-		GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
+		StackPane stackPane = new StackPane();
+		stackPane.setAlignment(Pos.TOP_LEFT);
+		stackPane.getChildren().addAll(histogram, selector);
+		root.getChildren().addAll(stackPane, histogram2);
 
-		graphicsContext.strokePolyline(new double[] {20, 50, 50, 20}, new double[] {20, 50, 250, 280}, 4);
-		graphicsContext.strokePolyline(new double[] {280, 250, 250, 280}, new double[] {20, 50, 250, 280}, 4);
-		
-		root.getChildren().addAll(histogram, histogram2, canvas);
-
-		primaryStage.setScene(new Scene(root, 1000, 1000));
+		primaryStage.setScene(new Scene(root, 800, 800));
 		primaryStage.show();
 	}
 }
