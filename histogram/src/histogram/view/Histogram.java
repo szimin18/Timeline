@@ -45,6 +45,8 @@ public class Histogram extends GridPane {
 						new Data<String, Number>(eventsGroup.toString(), eventsGroup.getEventsCount())));
 
 		barChart.getData().add(series);
+		barChart.setBarGap(0);
+		barChart.setCategoryGap(0);
 
 	}
 
