@@ -21,4 +21,8 @@ public class TimelineEvent {
 	public LocalDateTime getDateTime() {
 		return dateTime;
 	}
+
+	public TID getTid() {
+		return tid;
+	}
 }

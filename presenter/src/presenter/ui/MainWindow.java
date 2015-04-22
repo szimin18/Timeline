@@ -6,14 +6,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import javafx.application.Application;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.event.TimelineEvent;
 import presenter.generator.RandomDataGenerator;
-import presenter.selector.Selector;
 
 public class MainWindow extends Application {
 
@@ -25,26 +21,19 @@ public class MainWindow extends Application {
 	}
 
 	@Override
-	public void start(Stage primaryStage) throws Exception {
-		primaryStage.setTitle("Histogram test");
-		
-		VBox root = new VBox();
+	public void start(Stage primaryStage) {
+		try {
+			primaryStage.setTitle("Histogram test");
 
-		LocalDateTime now = LocalDateTime.now();
+			LocalDateTime now = LocalDateTime.now();
+			List<TimelineEvent> events = RandomDataGenerator.generateRandomEvents(now.minusYears(1), now, 10000);
 
-		List<TimelineEvent> events = RandomDataGenerator.generateRandomEvents(now.minusYears(1), now, 10000);
+			Histogram histogram = Histogram.newInstance(events, true);
 
-		Histogram histogram = Histogram.newInstance(events, true);
-		Histogram histogram2 = Histogram.newInstance(events, false);
-		
-		Selector selector = new Selector(500, 227, 27);
-		
-		StackPane stackPane = new StackPane();
-		stackPane.setAlignment(Pos.TOP_LEFT);
-		stackPane.getChildren().addAll(histogram, selector);
-		root.getChildren().addAll(stackPane, histogram2);
-
-		primaryStage.setScene(new Scene(root, 800, 800));
-		primaryStage.show();
+			primaryStage.setScene(new Scene(histogram, 1400, 400));
+			primaryStage.show();
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
 	}
 }
