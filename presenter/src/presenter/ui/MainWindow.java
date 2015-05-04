@@ -2,7 +2,7 @@ package presenter.ui;
 
 import histogram.view.Histogram;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 import javafx.application.Application;
@@ -25,8 +25,9 @@ public class MainWindow extends Application {
 		try {
 			primaryStage.setTitle("Histogram test");
 
-			LocalDateTime now = LocalDateTime.now();
-			List<TimelineEvent> events = RandomDataGenerator.generateRandomEvents(now.minusYears(1), now, 10000);
+			long currentTimeMillis = System.currentTimeMillis();
+			List<TimelineEvent> events = RandomDataGenerator.generateRandomEvents(new Date(currentTimeMillis
+					- yearsInMiliseconds(1)), new Date(currentTimeMillis), 10000);
 
 			Histogram histogram = Histogram.newInstance(events, true);
 
@@ -35,5 +36,9 @@ public class MainWindow extends Application {
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
+	}
+
+	private int yearsInMiliseconds(int years) {
+		return (int)(years * 365.25 * 24 * 60 * 60 * 1000);
 	}
 }

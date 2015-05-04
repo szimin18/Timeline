@@ -1,28 +1,28 @@
 package model.event;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 import model.id.IDManager;
 import model.id.IDManager.TID;
 
 public class TimelineEvent {
-	private final TID tid;
-	private final LocalDateTime dateTime;
+	private final TID timelineID;
+	private final Date date;
 	
-	private TimelineEvent(TID timelineID, LocalDateTime localDateTime) {
-		dateTime = localDateTime;
-		tid = timelineID;
+	private TimelineEvent(TID timelineID, Date date) {
+		this.date = date;
+		this.timelineID = timelineID;
 	}
 	
-	public static TimelineEvent newInstance(LocalDateTime dateTime) {
+	public static TimelineEvent newInstance(Date dateTime) {
 		return new TimelineEvent(IDManager.generateID(), dateTime);
 	}
 
-	public LocalDateTime getDateTime() {
-		return dateTime;
+	public Date getDate() {
+		return date;
 	}
 
 	public TID getTid() {
-		return tid;
+		return timelineID;
 	}
 }

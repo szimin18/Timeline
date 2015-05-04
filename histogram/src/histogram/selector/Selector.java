@@ -3,6 +3,10 @@ package histogram.selector;
 import java.util.ArrayList;
 import java.util.List;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
+import javafx.geometry.Bounds;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
@@ -32,10 +36,32 @@ public class Selector extends Canvas {
 
 	public Selector() {
 		graphicsContext = this.getGraphicsContext2D();
-		addEventHandler(MouseEvent.MOUSE_PRESSED, this::mousePressed);
-		addEventHandler(MouseEvent.MOUSE_DRAGGED, this::mouseDragged);
-		addEventHandler(MouseEvent.MOUSE_RELEASED, this::mouseReleased);
-		boundsInLocalProperty().addListener((observable, oldValue, newValue) -> drawFrame());
+
+		addEventHandler(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				mousePressed(event);
+			}
+		});
+		addEventHandler(MouseEvent.MOUSE_DRAGGED, new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				mouseDragged(event);
+			}
+		});
+		addEventHandler(MouseEvent.MOUSE_RELEASED, new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				mouseReleased(event);
+			}
+		});
+		
+		boundsInLocalProperty().addListener(new ChangeListener<Bounds>() {
+			@Override
+			public void changed(ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) {
+				drawFrame();
+			}
+		});
 	}
 
 	public void setTopY(double topY) {
