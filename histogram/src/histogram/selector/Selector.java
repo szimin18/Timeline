@@ -6,6 +6,7 @@ import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -13,9 +14,11 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 
 public class Selector extends Canvas {
-	private static final Color COLOR1 = Color.rgb(0, 255, 255, 0.4);
-	private static final Color COLOR2 = Color.rgb(0, 0, 255, 0.2);
-	private static final int EDGE_CONSTANT = 13;
+	private final static double HOLDER_INTER_LINES_GAP = 4;
+
+	private final static double HOLDER_VERTICAL_GAPS = 4;
+
+	private final static Color GRAYED_COLOR = Color.gray(0.5, 0.5);
 
 	private enum DraggedPart {
 		LEFT, ALL, RIGHT, NONE
@@ -24,10 +27,17 @@ public class Selector extends Canvas {
 	private GraphicsContext graphicsContext;
 
 	private double topY;
+	private double bottomY;
 	private double chartHeight;
+	private double leftX;
+	private double chartWidth;
 
 	private double pressX;
 	private DraggedPart draggedPart;
+
+	private Bounds leftHolderBounds = new BoundingBox(0, 0, 0, 0);
+	private Bounds rightHolderBounds = new BoundingBox(0, 0, 0, 0);
+	private Bounds bottomHolderBounds = new BoundingBox(0, 0, 0, 0);
 
 	private int currentLeftTickIndex = 0;
 	private int currentRightTickIndex = 0;
@@ -36,6 +46,9 @@ public class Selector extends Canvas {
 
 	public Selector() {
 		graphicsContext = this.getGraphicsContext2D();
+		graphicsContext.setLineWidth(2);
+		graphicsContext.setStroke(Color.BLACK);
+		graphicsContext.setFill(GRAYED_COLOR);
 
 		addEventHandler(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
 			@Override
@@ -55,7 +68,7 @@ public class Selector extends Canvas {
 				mouseReleased(event);
 			}
 		});
-		
+
 		boundsInLocalProperty().addListener(new ChangeListener<Bounds>() {
 			@Override
 			public void changed(ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) {
@@ -64,76 +77,84 @@ public class Selector extends Canvas {
 		});
 	}
 
-	public void setTopY(double topY) {
-		this.topY = topY;
+	public void setLeftX(double leftX) {
+		this.leftX = leftX;
 		drawFrame();
 	}
 
-	private double getTopY() {
-		return topY;
+	public void setChartWidth(double chartWidth) {
+		this.chartWidth = chartWidth;
+		drawFrame();
+	}
+
+	public void setTopY(double topY) {
+		this.topY = topY;
+		bottomY = topY + chartHeight;
+		drawFrame();
 	}
 
 	public void setChartHeight(double chartHeight) {
 		this.chartHeight = chartHeight;
+		bottomY = topY + chartHeight;
 		drawFrame();
-	}
-
-	private double getBottomY() {
-		return topY + chartHeight;
 	}
 
 	public void drawFrame() {
 		graphicsContext.clearRect(0, 0, getWidth(), getHeight());
 
-		double xLeft = 0;
-		double xRight = 0;
+		if (!timelineTicks.isEmpty()) {
+			double xLeft = timelineTicks.get(currentLeftTickIndex).getLeft();
+			double xRight = timelineTicks.get(currentRightTickIndex).getRight();
 
-		if (timelineTicks.size() > 0) {
-			xLeft = timelineTicks.get(currentLeftTickIndex).getLeft();
-			xRight = timelineTicks.get(currentRightTickIndex).getRight();
+			graphicsContext.strokeLine(xLeft, topY, xLeft, bottomY);
+			graphicsContext.strokeLine(xRight, topY, xRight, bottomY);
+
+			leftHolderBounds = new BoundingBox(xLeft - 2 * HOLDER_INTER_LINES_GAP, topY - 3 * HOLDER_INTER_LINES_GAP,
+					4 * HOLDER_INTER_LINES_GAP, 3 * HOLDER_INTER_LINES_GAP);
+
+			rightHolderBounds = new BoundingBox(xRight - 2 * HOLDER_INTER_LINES_GAP, topY - 3 * HOLDER_INTER_LINES_GAP,
+					4 * HOLDER_INTER_LINES_GAP, 3 * HOLDER_INTER_LINES_GAP);
+
+			bottomHolderBounds = new BoundingBox(xLeft, bottomY, xRight - xLeft, 3 * HOLDER_INTER_LINES_GAP);
+
+			drawHolder(leftHolderBounds);
+			drawHolder(rightHolderBounds);
+			drawHolder(bottomHolderBounds);
+
+			graphicsContext.fillRect(leftX, topY, xLeft - leftX, chartHeight);
+			graphicsContext.fillRect(xRight, topY, leftX + chartWidth - xRight, chartHeight);
 		}
+	}
 
-		double[] leftXLocations = new double[] { xLeft - EDGE_CONSTANT, xLeft, xLeft, xLeft - EDGE_CONSTANT };
+	private void drawHolder(Bounds bounds) {
+		graphicsContext.strokeRect(bounds.getMinX(), bounds.getMinY(), bounds.getWidth(), bounds.getHeight());
 
-		double[] rightXLocations = new double[] { xRight + EDGE_CONSTANT, xRight, xRight, xRight + EDGE_CONSTANT };
+		double middle = (bounds.getMinX() + bounds.getMaxX()) / 2;
+		double left = middle - HOLDER_INTER_LINES_GAP;
+		double right = middle + HOLDER_INTER_LINES_GAP;
+		double linesTop = bounds.getMinY() + HOLDER_VERTICAL_GAPS;
+		double linesBottom = bounds.getMaxY() - HOLDER_VERTICAL_GAPS;
 
-		double[] sideYLocations = { getTopY() - EDGE_CONSTANT, getTopY(), getBottomY(), getBottomY() + EDGE_CONSTANT };
-
-		double[] bottomXLocations = new double[] { xLeft - EDGE_CONSTANT, xLeft, xRight, xRight + EDGE_CONSTANT };
-
-		double[] bottomYLocations = new double[] { getBottomY() + EDGE_CONSTANT, getBottomY(), getBottomY(),
-				getBottomY() + EDGE_CONSTANT };
-
-		graphicsContext.setStroke(Color.BLACK);
-		graphicsContext.strokePolyline(leftXLocations, sideYLocations, 4);
-		graphicsContext.strokePolyline(rightXLocations, sideYLocations, 4);
-
-		graphicsContext.setFill(COLOR2);
-		graphicsContext.fillPolygon(leftXLocations, sideYLocations, 4);
-		graphicsContext.fillPolygon(rightXLocations, sideYLocations, 4);
-
-		graphicsContext.setFill(COLOR1);
-		graphicsContext.fillPolygon(bottomXLocations, bottomYLocations, 4);
+		graphicsContext.strokeLine(left, linesTop, left, linesBottom);
+		graphicsContext.strokeLine(middle, linesTop, middle, linesBottom);
+		graphicsContext.strokeLine(right, linesTop, right, linesBottom);
 	}
 
 	private void mousePressed(MouseEvent e) {
-		double mouseX = e.getX();
-		double mouseY = e.getY();
+		if (!timelineTicks.isEmpty()) {
+			double mouseX = e.getX();
+			double mouseY = e.getY();
 
-		double leftValue = timelineTicks.get(currentLeftTickIndex).getLeft();
-		double rightValue = timelineTicks.get(currentRightTickIndex).getRight();
+			if (leftHolderBounds.contains(mouseX, mouseY)) {
+				draggedPart = DraggedPart.LEFT;
+			} else if (rightHolderBounds.contains(mouseX, mouseY)) {
+				draggedPart = DraggedPart.RIGHT;
+			} else if (bottomHolderBounds.contains(mouseX, mouseY)) {
+				draggedPart = DraggedPart.ALL;
+			}
 
-		if (leftValue - EDGE_CONSTANT <= mouseX && mouseX <= leftValue && getTopY() - EDGE_CONSTANT <= mouseY
-				&& mouseY <= getBottomY() + EDGE_CONSTANT) {
-			draggedPart = DraggedPart.LEFT;
-		} else if (rightValue <= mouseX && mouseX <= rightValue + EDGE_CONSTANT && getTopY() - EDGE_CONSTANT <= mouseY
-				&& mouseY <= getBottomY() + EDGE_CONSTANT) {
-			draggedPart = DraggedPart.RIGHT;
-		} else if (leftValue <= mouseX && mouseX <= rightValue && getBottomY() <= mouseY
-				&& mouseY <= getBottomY() + EDGE_CONSTANT) {
-			draggedPart = DraggedPart.ALL;
+			pressX = mouseX;
 		}
-		pressX = mouseX;
 	}
 
 	private void mouseDragged(MouseEvent e) {
@@ -194,7 +215,7 @@ public class Selector extends Canvas {
 
 		return Math.max(bestFitIndex, currentLeftTickIndex);
 	}
-	
+
 	private int findShiftForAll(double x) {
 		double bestFit = timelineTicks.get(timelineTicks.size() - 1).getRight() - timelineTicks.get(0).getLeft();
 		int bestFitIndex = currentLeftTickIndex;
@@ -206,7 +227,7 @@ public class Selector extends Canvas {
 				bestFitIndex = i;
 			}
 		}
-		
+
 		return Math.min(bestFitIndex - currentLeftTickIndex, timelineTicks.size() - currentRightTickIndex - 1);
 	}
 
