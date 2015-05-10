@@ -1,12 +1,12 @@
 package presenter.generator;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
+import javafx.scene.paint.Color;
+import model.dataset.TimelineDataSet;
 import model.event.TimelineEvent;
 
 public class RandomDataGenerator {
@@ -14,16 +14,18 @@ public class RandomDataGenerator {
 		throw new AssertionError();
 	}
 
-	public static List<TimelineEvent> generateRandomEvents(LocalDateTime startDateTime, LocalDateTime endDateTime,
-			int numberOfItemsToGenerate) {
-		long timeStamps = ChronoUnit.MINUTES.between(startDateTime, endDateTime);
+	public static TimelineDataSet generateDataSet(Date startDate, Date endDate, int numberOfItemsToGenerate,
+			Color color) {
+		long startTime = startDate.getTime();
+		long timeStamps = endDate.getTime() - startTime;
 		Random random = new Random();
 
-		return IntStream
-				.generate(() -> 0)
-				.limit(numberOfItemsToGenerate)
-				.mapToObj(
-						number -> TimelineEvent.newInstance(startDateTime.plusMinutes(random.nextLong() % timeStamps)))
-				.collect(Collectors.toList());
+		List<TimelineEvent> events = new ArrayList<>();
+
+		for (int i = 0; i < numberOfItemsToGenerate; i++) {
+			events.add(TimelineEvent.newInstance(new Date(startTime + Math.abs(random.nextLong() % timeStamps))));
+		}
+
+		return new TimelineDataSet(events, color);
 	}
 }

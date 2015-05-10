@@ -7,129 +7,217 @@ import histogram.selector.Selector.TimelineTick;
 
 import java.util.List;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.StackedBarChart;
 import javafx.scene.chart.XYChart.Data;
 import javafx.scene.chart.XYChart.Series;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import model.event.TimelineEvent;
-import model.event.TimelineEventsGroup;
+import javafx.scene.transform.Transform;
+import model.dataset.TimelineDataSet;
+import model.event.TimelineCategory;
+import model.event.TimelineChartData;
 
 public class Histogram extends Pane {
-	private final List<TimelineEvent> events;
-	private final List<TimelineEventsGroup> groupedEvents;
 
-	private Histogram(List<TimelineEvent> events, boolean isBarChart) {
-		this.events = events;
+	private final GroupingMethod defaultGroupingMethod;
 
-		StackPane stackPane = new StackPane();
-		stackPane.setAlignment(Pos.TOP_LEFT);
+	private GroupingMethod groupingMethod;
+
+	private StackPane currentStackPane = null;
+
+	private ChangeListener<Number> widthChangeListener = null;
+
+	private ChangeListener<Number> heightchangeListener = null;
+
+	private final List<TimelineDataSet> timelineDataSets;
+
+	private Histogram(List<TimelineDataSet> timelineDataSets) {
+		this.timelineDataSets = timelineDataSets;
+
+		defaultGroupingMethod = GroupingMethod.defaultForDatasets(timelineDataSets);
+
+		groupingMethod = defaultGroupingMethod;
+
+		initializeGUI();
+	}
+
+	private Histogram(List<TimelineDataSet> timelineDataSets, GroupingMethod groupingMethod) {
+		this.timelineDataSets = timelineDataSets;
+
+		defaultGroupingMethod = GroupingMethod.defaultForDatasets(timelineDataSets);
+
+		this.groupingMethod = groupingMethod;
+
+		initializeGUI();
+	}
+
+	public void setGroupingMethod(GroupingMethod groupingMethod) {
+		this.groupingMethod = groupingMethod;
+	}
+
+	public void restoreDefaultGroupingMethod() {
+		groupingMethod = defaultGroupingMethod;
+	}
+
+	private void initializeGUI() {
+		if (widthChangeListener != null) {
+			widthProperty().removeListener(widthChangeListener);
+			widthChangeListener = null;
+		}
+		if (heightchangeListener != null) {
+			heightProperty().removeListener(heightchangeListener);
+			heightchangeListener = null;
+		}
+		if (currentStackPane != null) {
+			getChildren().removeAll(currentStackPane);
+			currentStackPane = null;
+		}
+
+		List<TimelineCategory> groupedCategories = Grouper.group(timelineDataSets, groupingMethod);
+
+		final StackPane stackPane = new StackPane();
 		getChildren().addAll(stackPane);
+		currentStackPane = stackPane;
+		stackPane.setAlignment(Pos.TOP_LEFT);
 
-		widthProperty().addListener((observable, oldValue, newValue) -> {
-			double doubleValue = newValue.doubleValue();
-			stackPane.setMinWidth(doubleValue);
-			stackPane.setMaxWidth(doubleValue);
-		});
-		heightProperty().addListener((observable, oldValue, newValue) -> {
-			double doubleValue = newValue.doubleValue();
-			stackPane.setMinHeight(doubleValue);
-			stackPane.setMaxHeight(doubleValue);
-		});
+		widthChangeListener = new ChangeListener<Number>() {
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				double doubleValue = newValue.doubleValue();
+				stackPane.setMinWidth(doubleValue);
+				stackPane.setMaxWidth(doubleValue);
+			};
+		};
+		widthProperty().addListener(widthChangeListener);
+
+		heightchangeListener = new ChangeListener<Number>() {
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				double doubleValue = newValue.doubleValue();
+				stackPane.setMinHeight(doubleValue);
+				stackPane.setMaxHeight(doubleValue);
+			};
+		};
+		heightProperty().addListener(heightchangeListener);
+
+		final Selector selector = new Selector();
 
 		CategoryAxis xAxis = new CategoryAxis();
 		NumberAxis yAxis = new NumberAxis();
 
-		groupedEvents = Grouper.group(events, GroupingMethod.MONTHS);
+		final StackedBarChart<String, Number> chart = new StackedBarChart<>(xAxis, yAxis);
 
-		if (isBarChart) {
-			BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
+		chart.setCategoryGap(1);
+		chart.setLegendVisible(false);
 
-			Selector selector = new Selector();
+		stackPane.getChildren().addAll(chart, selector);
 
-			stackPane.getChildren().addAll(barChart, selector);
-
-			stackPane.widthProperty().addListener((observable, oldValue, newValue) -> {
+		stackPane.widthProperty().addListener(new ChangeListener<Number>() {
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double doubleValue = newValue.doubleValue();
-				barChart.setMinWidth(doubleValue);
-				barChart.setMaxWidth(doubleValue);
+				chart.setMinWidth(doubleValue);
+				chart.setMaxWidth(doubleValue);
 				selector.widthProperty().set(doubleValue);
-			});
-			stackPane.heightProperty().addListener((observable, oldValue, newValue) -> {
+			};
+		});
+
+		stackPane.heightProperty().addListener(new ChangeListener<Number>() {
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double doubleValue = newValue.doubleValue();
-				barChart.setMinHeight(doubleValue);
-				barChart.setMaxHeight(doubleValue);
+				chart.setMinHeight(doubleValue);
+				chart.setMaxHeight(doubleValue);
 				selector.heightProperty().set(doubleValue);
-			});
+			};
+		});
 
-			barChart.setTitle("Histogram");
-			xAxis.setLabel("Event time ranges");
-			yAxis.setLabel("Number of occurences");
+		chart.getXAxis().localToSceneTransformProperty().addListener(new ChangeListener<Transform>() {
+			@Override
+			public void changed(ObservableValue<? extends Transform> observable, Transform oldValue, Transform newValue) {
+				selector.setLeftX(newValue.getTx());
+			}
+		});
 
+		chart.getXAxis().widthProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				selector.setChartWidth(newValue.doubleValue());
+			}
+		});
+
+		chart.getYAxis().localToSceneTransformProperty().addListener(new ChangeListener<Transform>() {
+			public void changed(ObservableValue<? extends Transform> observable, Transform oldValue, Transform newValue) {
+				selector.setTopY(newValue.getTy());
+			};
+		});
+
+		chart.getYAxis().heightProperty().addListener(new ChangeListener<Number>() {
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				selector.setChartHeight(newValue.doubleValue());
+			};
+		});
+
+		ObservableList<String> categoriesNamesList = FXCollections.<String> observableArrayList();
+
+		xAxis.setCategories(categoriesNamesList);
+
+		chart.setTitle("Histogram");
+		xAxis.setLabel("Event time periods");
+		yAxis.setLabel("Number of occurences");
+
+		ObservableList<Series<String, Number>> chartData = chart.getData();
+
+		boolean firstSeries = true;
+
+		for (TimelineCategory timelineCategory : groupedCategories) {
 			Series<String, Number> series = new Series<>();
 
-			series.setName("events series");
-
 			ObservableList<Data<String, Number>> seriesData = series.getData();
-			groupedEvents.forEach(eventsGroup -> {
-				seriesData.add(new Data<String, Number>(eventsGroup.toString(), eventsGroup.getEventsCount()));
-			});
 
-			barChart.getData().add(series);
+			chartData.add(series);
 
-			series.getChart().getYAxis().localToSceneTransformProperty()
-					.addListener((observable, oldValue, newValue) -> selector.setTopY(newValue.getTy()));
+			for (TimelineChartData timelineChartData : timelineCategory.getTimelineChartDataList()) {
+				Data<String, Number> data = new Data<String, Number>(timelineChartData.getDescription(),
+						timelineChartData.getEventsCount());
+				seriesData.add(data);
 
-			series.getChart().getYAxis().heightProperty()
-					.addListener((observable, oldValue, newValue) -> selector.setChartHeight(newValue.doubleValue()));
-
-			seriesData.forEach(data -> {
 				Node node = data.getNode();
-				TimelineTick timelineTick = selector.newTimelineTick();
+				node.setStyle(String.format("-fx-bar-fill: %s;", timelineCategory.getColorHex()));
 
-				node.localToSceneTransformProperty().addListener((observable, oldValue, newValue) -> {
-					timelineTick.setLeft(newValue.getTx());
-				});
+				if (firstSeries) {
+					categoriesNamesList.add(data.getXValue());
 
-				node.boundsInParentProperty().addListener((observable, oldValue, newValue) -> {
-					timelineTick.setWidth(newValue.getWidth());
-				});
-			});
+					final TimelineTick timelineTick = selector.newTimelineTick();
 
-			barChart.setBarGap(0);
-			barChart.setCategoryGap(1);
-		} else {
-			//
-			// LineChart<String, Number> lineChart = new LineChart<>(xAxis,
-			// yAxis);
-			//
-			// add(lineChart, 0, 0);
-			// setFillHeight(lineChart, true);
-			// setFillWidth(lineChart, true);
-			//
-			// lineChart.setTitle("Histogram");
-			// xAxis.setLabel("Event time ranges");
-			// yAxis.setLabel("Number of occurences");
-			//
-			// Series<String, Number> series = new Series<>();
-			//
-			// series.setName("events series");
-			//
-			// groupedEvents.forEach(
-			// eventsGroup -> series.getData().add(
-			// new Data<String, Number>(eventsGroup.toString(),
-			// eventsGroup.getEventsCount())));
-			//
-			// lineChart.getData().add(series);
+					node.localToSceneTransformProperty().addListener(new ChangeListener<Transform>() {
+						public void changed(ObservableValue<? extends Transform> observable, Transform oldValue,
+								Transform newValue) {
+							timelineTick.setLeft(newValue.getTx());
+							selector.drawFrame();
+						};
+					});
+
+					node.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
+						public void changed(ObservableValue<? extends Bounds> observable, Bounds oldValue,
+								Bounds newValue) {
+							timelineTick.setWidth(newValue.getWidth());
+							selector.drawFrame();
+						};
+					});
+				}
+			}
+
+			firstSeries = false;
 		}
 	}
 
-	public static Histogram newInstance(List<TimelineEvent> events, boolean barChart) {
-		return new Histogram(events, barChart);
+	public static Histogram newInstance(List<TimelineDataSet> timelineDataSets) {
+		return new Histogram(timelineDataSets);
 	}
 }
