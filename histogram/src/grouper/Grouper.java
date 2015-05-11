@@ -15,6 +15,7 @@ import model.event.TimelineEvent;
 import com.google.common.base.Joiner;
 
 public class Grouper {
+
 	private Grouper() {
 		throw new AssertionError();
 	}
@@ -27,7 +28,11 @@ public class Grouper {
 		MONTHS() {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
-				calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), 1);
+				calendar.set(
+						Calendar.DAY_OF_MONTH, 1,
+						Calendar.HOUR_OF_DAY,  0,
+						Calendar.MINUTE,       0
+				);
 			}
 
 			@Override
@@ -37,16 +42,35 @@ public class Grouper {
 
 			@Override
 			protected String getTimeDescription(Calendar calendar) {
-				return Joiner.on(' ').join(getMonthLabel(calendar.get(Calendar.MONTH)),
-						getYearLabel(calendar.get(Calendar.YEAR)));
+				return Joiner.on(' ').join(getMonthLabel(calendar.get(Calendar.MONTH)), getYearLabel(calendar.get(Calendar.YEAR)));
 			}
+		},
+		
+		WEEKS() {
+			@Override
+			protected void setInitialTime(Calendar calendar) {
+				calendar.set(
+						Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek(),
+						Calendar.HOUR_OF_DAY, 0,
+						Calendar.MINUTE,      0
+				);
+			}
+
+			@Override
+			protected void setNextTime(Calendar calendar) {
+				calendar.add(Calendar.DAY_OF_MONTH, 7);
+			}
+
+			@Override
+			protected String getTimeDescription(Calendar calendar) {
+				return String.format("%d week of %s", calendar.get(Calendar.WEEK_OF_YEAR), getYearLabel(calendar.get(Calendar.YEAR)));
+			}	
 		},
 
 		DAYS() {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
-				calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH),
-						calendar.get(Calendar.DAY_OF_MONTH));
+				calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), 0, 0);
 			}
 
 			@Override
@@ -56,8 +80,27 @@ public class Grouper {
 
 			@Override
 			protected String getTimeDescription(Calendar calendar) {
-				return Joiner.on(' ').join(getMonthLabel(calendar.get(Calendar.MONTH)),
-						getDayLabel(calendar.get(Calendar.DAY_OF_MONTH)), getYearLabel(calendar.get(Calendar.YEAR)));
+				return Joiner.on(' ').join(getMonthLabel(calendar.get(Calendar.MONTH)), getDayLabel(calendar.get(Calendar.DAY_OF_MONTH)),
+						getYearLabel(calendar.get(Calendar.YEAR)));
+			}
+		}, 
+		
+		HOURS() {
+			@Override
+			protected void setInitialTime(Calendar calendar) {
+				calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), 0, 0);
+			}
+
+			@Override
+			protected void setNextTime(Calendar calendar) {
+				calendar.add(Calendar.HOUR_OF_DAY, 1);				
+			}
+
+			@Override
+			protected String getTimeDescription(Calendar calendar) {
+				return Joiner.on(' ').join(getMonthLabel(calendar.get(Calendar.MONTH)), getDayLabel(calendar.get(Calendar.DAY_OF_MONTH)),
+						getYearLabel(calendar.get(Calendar.YEAR)), getHourLabel(calendar));
+
 			}
 		};
 
@@ -69,39 +112,19 @@ public class Grouper {
 			return "'" + String.valueOf(year % 100);
 		}
 
+		private static final String[] monthNames = { "January", "February", "March", "April", "May", "June", "July", "August", "September",
+				"October", "November", "December" };
+
 		private static final String getMonthLabel(int month) {
-			switch (month) {
-			case 0:
-				return "January";
-			case 1:
-				return "February";
-			case 2:
-				return "March";
-			case 3:
-				return "April";
-			case 4:
-				return "May";
-			case 5:
-				return "June";
-			case 6:
-				return "July";
-			case 7:
-				return "August";
-			case 8:
-				return "September";
-			case 9:
-				return "October";
-			case 10:
-				return "November";
-			case 11:
-				return "December";
-			default:
-				return "Unknown";
-			}
+			return monthNames[month];
 		}
 
 		private static final String getDayLabel(int day) {
 			return String.valueOf(day);
+		}
+		
+		private static String getHourLabel(Calendar calendar) {
+			return Joiner.on(":").join(calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
 		}
 
 		private final List<TimelineCategory> group(List<TimelineDataSet> timelineDataSets) {
@@ -138,8 +161,7 @@ public class Grouper {
 						eventsList.add(eventsProvider.getNextEvent());
 					}
 
-					timelineCategory
-							.addTimelineChartData(new TimelineChartData(eventsList, timeRange.getDescription()));
+					timelineCategory.addTimelineChartData(new TimelineChartData(eventsList, timeRange.getDescription()));
 				}
 
 				boolean anySeriesHasMoreEvents = false;
