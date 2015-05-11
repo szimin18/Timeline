@@ -1,5 +1,6 @@
 package presenter.ui;
 
+import grouper.Grouper.GroupingMethod;
 import histogram.view.Histogram;
 
 import java.util.ArrayList;
@@ -28,21 +29,21 @@ public class MainWindow extends Application {
 		 * TODO
 		 * 
 		 * - listeners
-		 * - changing cursor
-		 * - more grouping methods
-		 * - advanced grouping
 		 */
 		
 		try {
 			primaryStage.setTitle("Histogram test");
 
 			long currentTimeMillis = System.currentTimeMillis();
-			long timeRange = yearsInMiliseconds(1);
+//			long timeRange = yearsInMiliseconds(5);			//MONTHS
+			long timeRange = yearsInMiliseconds(1);			//WEEKS
+//			long timeRange = yearsInMiliseconds(1)/12;		//DAYS
+//			long timeRange = yearsInMiliseconds(1)/60;		//HOURS
 			List<TimelineDataSet> timelineDataSets = new ArrayList<TimelineDataSet>();
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
 					currentTimeMillis), 100, Color.GOLD));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), 100, Color.GREEN));
+					currentTimeMillis), 100, Color.AQUA));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
 					currentTimeMillis), 100, Color.GREEN));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
@@ -50,7 +51,8 @@ public class MainWindow extends Application {
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
 					currentTimeMillis), 100, Color.RED));
 
-			Histogram histogram = Histogram.newInstance(timelineDataSets);
+			Histogram histogram = new Histogram(timelineDataSets);
+			histogram.setGroupingMethod(GroupingMethod.DAYS);
 
 			primaryStage.setScene(new Scene(histogram, 1400, 400));
 			primaryStage.show();

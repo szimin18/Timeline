@@ -8,8 +8,11 @@ import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
+import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.effect.BoxBlur;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 
@@ -66,6 +69,18 @@ public class Selector extends Canvas {
 			@Override
 			public void handle(MouseEvent event) {
 				mouseReleased(event);
+			}
+		});
+		addEventHandler(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				Point2D clickPoint = new Point2D(event.getX(), event.getY());
+				if (leftHolderBounds.contains(clickPoint) || rightHolderBounds.contains(clickPoint) || bottomHolderBounds.contains(clickPoint)) {
+					setCursor(Cursor.CLOSED_HAND);
+				} else {
+					setCursor(Cursor.DEFAULT);
+				}
 			}
 		});
 

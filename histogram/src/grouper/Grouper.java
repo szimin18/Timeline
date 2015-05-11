@@ -29,9 +29,9 @@ public class Grouper {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
 				calendar.set(
-						Calendar.DAY_OF_MONTH, 1,
-						Calendar.HOUR_OF_DAY,  0,
-						Calendar.MINUTE,       0
+						Calendar.DAY_OF_MONTH, 1//,
+						//Calendar.HOUR_OF_DAY,  0,
+						//Calendar.MINUTE,       0
 				);
 			}
 
@@ -44,15 +44,20 @@ public class Grouper {
 			protected String getTimeDescription(Calendar calendar) {
 				return Joiner.on(' ').join(getMonthLabel(calendar.get(Calendar.MONTH)), getYearLabel(calendar.get(Calendar.YEAR)));
 			}
+
+			@Override
+			protected double getEstimatedGroupSpanInMillis() {
+				return DAYS.getEstimatedGroupSpanInMillis() * (365.25 / 12); 
+			}
 		},
 		
 		WEEKS() {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
 				calendar.set(
-						Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek(),
-						Calendar.HOUR_OF_DAY, 0,
-						Calendar.MINUTE,      0
+						Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek()//,
+						//Calendar.HOUR_OF_DAY, 0,
+						///Calendar.MINUTE,      0
 				);
 			}
 
@@ -64,6 +69,11 @@ public class Grouper {
 			@Override
 			protected String getTimeDescription(Calendar calendar) {
 				return String.format("%d week of %s", calendar.get(Calendar.WEEK_OF_YEAR), getYearLabel(calendar.get(Calendar.YEAR)));
+			}
+
+			@Override
+			protected double getEstimatedGroupSpanInMillis() {
+				return DAYS.getEstimatedGroupSpanInMillis() * 7;
 			}	
 		},
 
@@ -83,12 +93,17 @@ public class Grouper {
 				return Joiner.on(' ').join(getMonthLabel(calendar.get(Calendar.MONTH)), getDayLabel(calendar.get(Calendar.DAY_OF_MONTH)),
 						getYearLabel(calendar.get(Calendar.YEAR)));
 			}
+
+			@Override
+			protected double getEstimatedGroupSpanInMillis() {
+				return HOURS.getEstimatedGroupSpanInMillis() * 24;
+			}
 		}, 
 		
 		HOURS() {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
-				calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), 0, 0);
+				calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DATE), calendar.get(Calendar.HOUR_OF_DAY), 0);
 			}
 
 			@Override
@@ -102,10 +117,36 @@ public class Grouper {
 						getYearLabel(calendar.get(Calendar.YEAR)), getHourLabel(calendar));
 
 			}
+
+			@Override
+			protected double getEstimatedGroupSpanInMillis() {
+				return 1000 * 60 * 60;
+			}
 		};
 
+		private static final int targetNumberOfBars = 50;
+		
 		public static final GroupingMethod defaultForDatasets(List<TimelineDataSet> timelineDataSets) {
-			return MONTHS;
+			double span = timelineDataSets.get(0).getSpanInMillis();
+			GroupingMethod bestMethod = null;
+			double bestRatio = 0;
+			for (GroupingMethod method : GroupingMethod.values()) {
+				System.out.printf("%s ~ %f bars\n", method, span / method.getEstimatedGroupSpanInMillis());
+				double newRatio = normalize(span / (method.getEstimatedGroupSpanInMillis() * targetNumberOfBars));
+				if (newRatio > bestRatio) {
+					bestRatio = newRatio;
+					bestMethod = method;
+				}
+			}
+			System.out.printf("Choosen method: %s\n\n", bestMethod);
+			return bestMethod;
+		}
+
+		private static double normalize(double ratio) {
+			if (ratio > 1) {
+				return 1 / ratio;
+			}
+			return ratio;
 		}
 
 		private static final String getYearLabel(int year) {
@@ -186,6 +227,8 @@ public class Grouper {
 		protected abstract void setNextTime(Calendar calendar);
 
 		protected abstract String getTimeDescription(Calendar calendar);
+		
+		protected abstract double getEstimatedGroupSpanInMillis();
 
 		private class InfiniteRangeIterable implements Iterable<TimeRange> {
 			private final Date firstDate;

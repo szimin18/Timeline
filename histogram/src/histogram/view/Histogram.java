@@ -40,7 +40,7 @@ public class Histogram extends Pane {
 
 	private final List<TimelineDataSet> timelineDataSets;
 
-	private Histogram(List<TimelineDataSet> timelineDataSets) {
+	public Histogram(List<TimelineDataSet> timelineDataSets) {
 		this.timelineDataSets = timelineDataSets;
 
 		defaultGroupingMethod = GroupingMethod.defaultForDatasets(timelineDataSets);
@@ -50,7 +50,7 @@ public class Histogram extends Pane {
 		initializeGUI();
 	}
 
-	private Histogram(List<TimelineDataSet> timelineDataSets, GroupingMethod groupingMethod) {
+	public Histogram(List<TimelineDataSet> timelineDataSets, GroupingMethod groupingMethod) {
 		this.timelineDataSets = timelineDataSets;
 
 		defaultGroupingMethod = GroupingMethod.defaultForDatasets(timelineDataSets);
@@ -215,9 +215,5 @@ public class Histogram extends Pane {
 
 			firstSeries = false;
 		}
-	}
-
-	public static Histogram newInstance(List<TimelineDataSet> timelineDataSets) {
-		return new Histogram(timelineDataSets);
 	}
 }
