@@ -1,7 +1,5 @@
 package presenter.ui;
 
-import histogram.view.Histogram;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -12,8 +10,9 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import model.dataset.TimelineDataSet;
 import presenter.generator.RandomDataGenerator;
+import clock.view.Clock;
 
-public class MainWindow extends Application {
+public class ClockMainWindow extends Application {
 
 	public static void main(String[] args) {
 		launch();
@@ -21,15 +20,6 @@ public class MainWindow extends Application {
 
 	@Override
 	public void start(Stage primaryStage) {
-		/*
-		 * TODO
-		 * 
-		 * - listeners
-		 * - changing cursor
-		 * - more grouping methods
-		 * - advanced grouping
-		 */
-		
 		try {
 			primaryStage.setTitle("Histogram test");
 
@@ -47,9 +37,9 @@ public class MainWindow extends Application {
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
 					currentTimeMillis), 100, Color.RED));
 
-			Histogram histogram = Histogram.newInstance(timelineDataSets);
+			Clock clock = Clock.newInstance(timelineDataSets);
 
-			primaryStage.setScene(new Scene(histogram, 1400, 400));
+			primaryStage.setScene(new Scene(clock, 600, 600));
 			primaryStage.show();
 		} catch (Throwable e) {
 			e.printStackTrace();
