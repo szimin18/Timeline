@@ -2,6 +2,8 @@ package presenter.ui;
 
 import grouper.Grouper.GroupingMethod;
 import histogram.view.Histogram;
+import histogram.view.HistogramSelectionChangeEvent;
+import histogram.view.HistogramSelectionChangeListener;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,6 +55,13 @@ public class MainWindow extends Application {
 
 			Histogram histogram = new Histogram(timelineDataSets);
 			histogram.setGroupingMethod(GroupingMethod.DAYS);
+			
+			histogram.addSelectionChangeListener(new HistogramSelectionChangeListener() {
+				@Override
+				public void selectionChanged(HistogramSelectionChangeEvent event) {
+					System.out.printf("Selection changed: %s - %s\n", event.getBeginning(), event.getEnd());
+				}
+			});
 
 			primaryStage.setScene(new Scene(histogram, 1400, 400));
 			primaryStage.show();

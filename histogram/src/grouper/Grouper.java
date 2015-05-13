@@ -28,10 +28,9 @@ public class Grouper {
 		MONTHS() {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
-				calendar.set(
-						Calendar.DAY_OF_MONTH, 1//,
-						//Calendar.HOUR_OF_DAY,  0,
-						//Calendar.MINUTE,       0
+				calendar.set(Calendar.DAY_OF_MONTH, 1// ,
+				// Calendar.HOUR_OF_DAY, 0,
+				// Calendar.MINUTE, 0
 				);
 			}
 
@@ -47,17 +46,16 @@ public class Grouper {
 
 			@Override
 			protected double getEstimatedGroupSpanInMillis() {
-				return DAYS.getEstimatedGroupSpanInMillis() * (365.25 / 12); 
+				return DAYS.getEstimatedGroupSpanInMillis() * (365.25 / 12);
 			}
 		},
-		
+
 		WEEKS() {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
-				calendar.set(
-						Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek()//,
-						//Calendar.HOUR_OF_DAY, 0,
-						///Calendar.MINUTE,      0
+				calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek()// ,
+				// Calendar.HOUR_OF_DAY, 0,
+				// /Calendar.MINUTE, 0
 				);
 			}
 
@@ -74,7 +72,7 @@ public class Grouper {
 			@Override
 			protected double getEstimatedGroupSpanInMillis() {
 				return DAYS.getEstimatedGroupSpanInMillis() * 7;
-			}	
+			}
 		},
 
 		DAYS() {
@@ -98,17 +96,18 @@ public class Grouper {
 			protected double getEstimatedGroupSpanInMillis() {
 				return HOURS.getEstimatedGroupSpanInMillis() * 24;
 			}
-		}, 
-		
+		},
+
 		HOURS() {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
-				calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DATE), calendar.get(Calendar.HOUR_OF_DAY), 0);
+				calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DATE),
+						calendar.get(Calendar.HOUR_OF_DAY), 0);
 			}
 
 			@Override
 			protected void setNextTime(Calendar calendar) {
-				calendar.add(Calendar.HOUR_OF_DAY, 1);				
+				calendar.add(Calendar.HOUR_OF_DAY, 1);
 			}
 
 			@Override
@@ -125,7 +124,7 @@ public class Grouper {
 		};
 
 		private static final int targetNumberOfBars = 50;
-		
+
 		public static final GroupingMethod defaultForDatasets(List<TimelineDataSet> timelineDataSets) {
 			double span = timelineDataSets.get(0).getSpanInMillis();
 			GroupingMethod bestMethod = null;
@@ -163,7 +162,7 @@ public class Grouper {
 		private static final String getDayLabel(int day) {
 			return String.valueOf(day);
 		}
-		
+
 		private static String getHourLabel(Calendar calendar) {
 			return Joiner.on(":").join(calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
 		}
@@ -202,7 +201,8 @@ public class Grouper {
 						eventsList.add(eventsProvider.getNextEvent());
 					}
 
-					timelineCategory.addTimelineChartData(new TimelineChartData(eventsList, timeRange.getDescription()));
+					timelineCategory.addTimelineChartData(new TimelineChartData(eventsList, timeRange.getDescription(), 
+							timeRange.getStartTime(), timeRange.getEndTime()));
 				}
 
 				boolean anySeriesHasMoreEvents = false;
@@ -227,7 +227,7 @@ public class Grouper {
 		protected abstract void setNextTime(Calendar calendar);
 
 		protected abstract String getTimeDescription(Calendar calendar);
-		
+
 		protected abstract double getEstimatedGroupSpanInMillis();
 
 		private class InfiniteRangeIterable implements Iterable<TimeRange> {
@@ -319,6 +319,14 @@ public class Grouper {
 
 		public String getDescription() {
 			return description;
+		}
+
+		public Date getStartTime() {
+			return new Date(startTime);
+		}
+
+		public Date getEndTime() {
+			return new Date(endTime);
 		}
 	}
 }

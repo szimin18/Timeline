@@ -1,5 +1,7 @@
 package histogram.selector;
 
+import histogram.view.Histogram;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +14,6 @@ import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.effect.BoxBlur;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 
@@ -47,7 +48,11 @@ public class Selector extends Canvas {
 
 	private final List<TimelineTick> timelineTicks = new ArrayList<>();
 
-	public Selector() {
+	private Histogram histogram;
+
+	public Selector(Histogram histogram) {
+		this.histogram = histogram;
+
 		graphicsContext = this.getGraphicsContext2D();
 		graphicsContext.setLineWidth(2);
 		graphicsContext.setStroke(Color.BLACK);
@@ -76,7 +81,8 @@ public class Selector extends Canvas {
 			@Override
 			public void handle(MouseEvent event) {
 				Point2D clickPoint = new Point2D(event.getX(), event.getY());
-				if (leftHolderBounds.contains(clickPoint) || rightHolderBounds.contains(clickPoint) || bottomHolderBounds.contains(clickPoint)) {
+				if (leftHolderBounds.contains(clickPoint) || rightHolderBounds.contains(clickPoint)
+						|| bottomHolderBounds.contains(clickPoint)) {
 					setCursor(Cursor.CLOSED_HAND);
 				} else {
 					setCursor(Cursor.DEFAULT);
@@ -173,6 +179,7 @@ public class Selector extends Canvas {
 	}
 
 	private void mouseDragged(MouseEvent e) {
+		boolean changed = false;
 		if (draggedPart != DraggedPart.NONE) {
 			double x = e.getX();
 			double diff = x - pressX;
@@ -181,23 +188,38 @@ public class Selector extends Canvas {
 				double oldLeft = timelineTicks.get(currentLeftTickIndex).getLeft();
 				currentLeftTickIndex = findIndexForLeft(oldLeft + diff);
 				double newLeft = timelineTicks.get(currentLeftTickIndex).getLeft();
-				pressX += newLeft - oldLeft;
-				drawFrame();
+				double move = newLeft - oldLeft;
+				if (move != 0) {
+					pressX += move;
+					drawFrame();
+					changed = true;
+				}
 			} else if (draggedPart == DraggedPart.RIGHT) {
 				double oldRight = timelineTicks.get(currentRightTickIndex).getRight();
 				currentRightTickIndex = findIndexForRight(oldRight + diff);
 				double newRight = timelineTicks.get(currentRightTickIndex).getRight();
-				pressX += newRight - oldRight;
-				drawFrame();
+				double move = newRight - oldRight;
+				if (move != 0) {
+					pressX += move;
+					drawFrame();
+					changed = true;
+				}
 			} else if (draggedPart == DraggedPart.ALL) {
 				double oldLeft = timelineTicks.get(currentLeftTickIndex).getLeft();
 				int shiftForAll = findShiftForAll(oldLeft + diff);
 				currentLeftTickIndex += shiftForAll;
 				currentRightTickIndex += shiftForAll;
 				double newLeft = timelineTicks.get(currentLeftTickIndex).getLeft();
-				pressX += newLeft - oldLeft;
-				drawFrame();
+				double move = newLeft - oldLeft;
+				if (move != 0) {
+					pressX += move;
+					drawFrame();
+					changed = true;
+				}
 			}
+		}
+		if (changed) {
+			histogram.selectionChanged(currentLeftTickIndex, currentRightTickIndex);
 		}
 	}
 
