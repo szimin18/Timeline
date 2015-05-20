@@ -21,7 +21,7 @@ public class ClockPresenter extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-			primaryStage.setTitle("Histogram test");
+			primaryStage.setTitle("Clock test");
 
 			long currentTimeMillis = System.currentTimeMillis();
 			long timeRange = yearsInMiliseconds(1);
