@@ -1,9 +1,9 @@
 package presenter.ui;
 
-import grouper.Grouper.GroupingMethod;
+import histogram.event.HistogramSelectionChangeEvent;
+import histogram.event.HistogramSelectionChangeListener;
+import histogram.grouper.Grouper.GroupingMethod;
 import histogram.view.Histogram;
-import histogram.view.HistogramSelectionChangeEvent;
-import histogram.view.HistogramSelectionChangeListener;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,7 +16,7 @@ import javafx.stage.Stage;
 import model.dataset.TimelineDataSet;
 import presenter.generator.RandomDataGenerator;
 
-public class MainWindow extends Application {
+public class HistogramPresenter extends Application {
 
 	public static void main(String[] args) {
 		launch();
@@ -27,7 +27,11 @@ public class MainWindow extends Application {
 		/*
 		 * TODO
 		 * 
-		 * - listeners
+		 * - TimeStampHelper:25 i < 0 !!!
+		 * - add grouping methods
+		 * - listeners on node selected
+		 * - multi node selection
+		 * - detailed info on hover
 		 */
 		
 		try {
@@ -52,7 +56,7 @@ public class MainWindow extends Application {
 
 			Histogram histogram = new Histogram(timelineDataSets);
 			histogram.setGroupingMethod(GroupingMethod.DAYS);
-			
+
 			histogram.addSelectionChangeListener(new HistogramSelectionChangeListener() {
 				@Override
 				public void selectionChanged(HistogramSelectionChangeEvent event) {

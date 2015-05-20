@@ -1,6 +1,5 @@
 package model.dataset;
 
-import java.util.Calendar;
 import java.util.List;
 
 import javafx.scene.paint.Color;
@@ -25,11 +24,11 @@ public class TimelineDataSet {
 		return color;
 	}
 
-	public long getSpanInMillis() {
-		Calendar begin = Calendar.getInstance();
-		begin.setTime(sortedEvents.get(0).getDate());
-		Calendar end = Calendar.getInstance();
-		end.setTime(Iterables.getLast(sortedEvents).getDate());
-		return end.getTimeInMillis() - begin.getTimeInMillis();
+	public long getTimeSpanMilliseconds() {
+		if (sortedEvents.isEmpty()) {
+			return 0;
+		} else {
+			return Iterables.getLast(sortedEvents).getDate().getTime() - sortedEvents.get(0).getDate().getTime();
+		}
 	}
 }

@@ -1,4 +1,6 @@
-package histogram.view;
+package histogram.event;
+
+import histogram.view.Histogram;
 
 import java.util.Date;
 import java.util.List;

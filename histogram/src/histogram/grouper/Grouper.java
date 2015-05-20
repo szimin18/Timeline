@@ -1,20 +1,38 @@
-package grouper;
+package histogram.grouper;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import model.dataset.TimelineDataSet;
 import model.event.TimelineCategory;
 import model.event.TimelineChartData;
 import model.event.TimelineEvent;
+import model.util.TimeLabelHelper;
+import model.util.TimeStampHelper;
 
 import com.google.common.base.Joiner;
 
 public class Grouper {
+
+	private static final Map<Integer, Integer> DEFAULT_CALENDAR_VALUES;
+
+	static {
+		DEFAULT_CALENDAR_VALUES = new HashMap<>();
+		DEFAULT_CALENDAR_VALUES.put(Calendar.MONTH, Calendar.JANUARY);
+		DEFAULT_CALENDAR_VALUES.put(Calendar.DAY_OF_MONTH, 1);
+		DEFAULT_CALENDAR_VALUES.put(Calendar.HOUR, 0);
+		DEFAULT_CALENDAR_VALUES.put(Calendar.MINUTE, 0);
+		DEFAULT_CALENDAR_VALUES.put(Calendar.SECOND, 0);
+		DEFAULT_CALENDAR_VALUES.put(Calendar.MILLISECOND, 0);
+	}
 
 	private Grouper() {
 		throw new AssertionError();
@@ -24,14 +42,15 @@ public class Grouper {
 		return groupingMethod.group(timelineDataSets);
 	}
 
+	public static GroupingMethod getDefaultGroupingMethodForDatasets(List<TimelineDataSet> timelineDataSets) {
+		return GroupingMethod.defaultForDatasets(timelineDataSets);
+	}
+
 	public static enum GroupingMethod {
-		MONTHS() {
+		MONTHS {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
-				calendar.set(Calendar.DAY_OF_MONTH, 1// ,
-				// Calendar.HOUR_OF_DAY, 0,
-				// Calendar.MINUTE, 0
-				);
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH);
 			}
 
 			@Override
@@ -41,44 +60,53 @@ public class Grouper {
 
 			@Override
 			protected String getTimeDescription(Calendar calendar) {
-				return Joiner.on(' ').join(getMonthLabel(calendar.get(Calendar.MONTH)), getYearLabel(calendar.get(Calendar.YEAR)));
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar),
+						TimeLabelHelper.getYearTwoDigitLabel(calendar));
 			}
 
 			@Override
-			protected double getEstimatedGroupSpanInMillis() {
-				return DAYS.getEstimatedGroupSpanInMillis() * (365.25 / 12);
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.monthEstimateInMiliseconds();
 			}
 		},
 
-		WEEKS() {
+		WEEKS {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
-				calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek()// ,
-				// Calendar.HOUR_OF_DAY, 0,
-				// /Calendar.MINUTE, 0
-				);
+				// TODO remove this enum value
+
+				// setFieldsDefaultsRetainingGiven(calendar, retainedFields);
+				// calendar.set(Calendar.DAY_OF_WEEK,
+				// calendar.getFirstDayOfWeek()// ,
+				// // Calendar.HOUR_OF_DAY, 0,
+				// // /Calendar.MINUTE, 0
+				// );
 			}
 
 			@Override
 			protected void setNextTime(Calendar calendar) {
-				calendar.add(Calendar.DAY_OF_MONTH, 7);
+				// calendar.add(Calendar.DAY_OF_MONTH, 7);
 			}
 
 			@Override
 			protected String getTimeDescription(Calendar calendar) {
-				return String.format("%d week of %s", calendar.get(Calendar.WEEK_OF_YEAR), getYearLabel(calendar.get(Calendar.YEAR)));
+				return "";
+				// return String.format("%d week of %s",
+				// calendar.get(Calendar.WEEK_OF_YEAR),
+				// getYearLabel(calendar.get(Calendar.YEAR)));
 			}
 
 			@Override
-			protected double getEstimatedGroupSpanInMillis() {
-				return DAYS.getEstimatedGroupSpanInMillis() * 7;
+			protected long getEstimatedGroupSpanInMillis() {
+				return 1;
+				// return DAYS.getEstimatedGroupSpanInMillis() * 7;
 			}
 		},
 
-		DAYS() {
+		DAYS {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
-				calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), 0, 0);
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH);
 			}
 
 			@Override
@@ -88,21 +116,20 @@ public class Grouper {
 
 			@Override
 			protected String getTimeDescription(Calendar calendar) {
-				return Joiner.on(' ').join(getMonthLabel(calendar.get(Calendar.MONTH)), getDayLabel(calendar.get(Calendar.DAY_OF_MONTH)),
-						getYearLabel(calendar.get(Calendar.YEAR)));
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar),
+						TimeLabelHelper.getDayOfMonthLabel(calendar), TimeLabelHelper.getYearTwoDigitLabel(calendar));
 			}
 
 			@Override
-			protected double getEstimatedGroupSpanInMillis() {
-				return HOURS.getEstimatedGroupSpanInMillis() * 24;
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.dayInMiliseconds();
 			}
 		},
 
-		HOURS() {
+		HOURS {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
-				calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DATE),
-						calendar.get(Calendar.HOUR_OF_DAY), 0);
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR);
 			}
 
 			@Override
@@ -112,26 +139,33 @@ public class Grouper {
 
 			@Override
 			protected String getTimeDescription(Calendar calendar) {
-				return Joiner.on(' ').join(getMonthLabel(calendar.get(Calendar.MONTH)), getDayLabel(calendar.get(Calendar.DAY_OF_MONTH)),
-						getYearLabel(calendar.get(Calendar.YEAR)), getHourLabel(calendar));
-
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar),
+						TimeLabelHelper.getDayOfMonthLabel(calendar), TimeLabelHelper.getYearTwoDigitLabel(calendar),
+						TimeLabelHelper.getHourAndMinuteLabel(calendar));
 			}
 
 			@Override
-			protected double getEstimatedGroupSpanInMillis() {
-				return 1000 * 60 * 60;
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.hourInMiliseconds();
 			}
 		};
 
-		private static final int targetNumberOfBars = 50;
+		private static final int TARGET_NUMBER_OF_BARS = 50;
 
-		public static final GroupingMethod defaultForDatasets(List<TimelineDataSet> timelineDataSets) {
-			double span = timelineDataSets.get(0).getSpanInMillis();
+		private static final GroupingMethod defaultForDatasets(List<TimelineDataSet> timelineDataSets) {
+			Set<Long> timeSpansSet = new HashSet<>();
+			for (TimelineDataSet dataSet : timelineDataSets) {
+				timeSpansSet.add(dataSet.getTimeSpanMilliseconds());
+			}
+			long maxSpan = Collections.max(timeSpansSet);
 			GroupingMethod bestMethod = null;
 			double bestRatio = 0;
 			for (GroupingMethod method : GroupingMethod.values()) {
-				System.out.printf("%s ~ %f bars\n", method, span / method.getEstimatedGroupSpanInMillis());
-				double newRatio = normalize(span / (method.getEstimatedGroupSpanInMillis() * targetNumberOfBars));
+				System.out.printf("%s - %f bars\n", method, (double) maxSpan / method.getEstimatedGroupSpanInMillis());
+				double newRatio = (double) method.getEstimatedGroupSpanInMillis() * TARGET_NUMBER_OF_BARS / maxSpan;
+				if (newRatio > 1) {
+					newRatio = 1 / newRatio;
+				}
 				if (newRatio > bestRatio) {
 					bestRatio = newRatio;
 					bestMethod = method;
@@ -141,30 +175,17 @@ public class Grouper {
 			return bestMethod;
 		}
 
-		private static double normalize(double ratio) {
-			if (ratio > 1) {
-				return 1 / ratio;
+		private static final void setFieldsDefaultsRetainingGiven(Calendar calendar, int... retainedFields) {
+			Set<Integer> retainedFieldsSet = new HashSet<Integer>(retainedFields.length);
+			for (int fieldName : retainedFields) {
+				retainedFieldsSet.add(fieldName);
 			}
-			return ratio;
-		}
 
-		private static final String getYearLabel(int year) {
-			return "'" + String.valueOf(year % 100);
-		}
-
-		private static final String[] monthNames = { "January", "February", "March", "April", "May", "June", "July", "August", "September",
-				"October", "November", "December" };
-
-		private static final String getMonthLabel(int month) {
-			return monthNames[month];
-		}
-
-		private static final String getDayLabel(int day) {
-			return String.valueOf(day);
-		}
-
-		private static String getHourLabel(Calendar calendar) {
-			return Joiner.on(":").join(calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
+			for (Integer key : DEFAULT_CALENDAR_VALUES.keySet()) {
+				if (!retainedFieldsSet.contains(key)) {
+					calendar.set(key, DEFAULT_CALENDAR_VALUES.get(key));
+				}
+			}
 		}
 
 		private final List<TimelineCategory> group(List<TimelineDataSet> timelineDataSets) {
@@ -201,7 +222,7 @@ public class Grouper {
 						eventsList.add(eventsProvider.getNextEvent());
 					}
 
-					timelineCategory.addTimelineChartData(new TimelineChartData(eventsList, timeRange.getDescription(), 
+					timelineCategory.addTimelineChartData(new TimelineChartData(eventsList, timeRange.getDescription(),
 							timeRange.getStartTime(), timeRange.getEndTime()));
 				}
 
@@ -228,7 +249,7 @@ public class Grouper {
 
 		protected abstract String getTimeDescription(Calendar calendar);
 
-		protected abstract double getEstimatedGroupSpanInMillis();
+		protected abstract long getEstimatedGroupSpanInMillis();
 
 		private class InfiniteRangeIterable implements Iterable<TimeRange> {
 			private final Date firstDate;

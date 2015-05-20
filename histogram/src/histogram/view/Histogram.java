@@ -1,7 +1,9 @@
 package histogram.view;
 
-import grouper.Grouper;
-import grouper.Grouper.GroupingMethod;
+import histogram.event.HistogramSelectionChangeEvent;
+import histogram.event.HistogramSelectionChangeListener;
+import histogram.grouper.Grouper;
+import histogram.grouper.Grouper.GroupingMethod;
 import histogram.selector.Selector;
 import histogram.selector.Selector.TimelineTick;
 
@@ -44,16 +46,16 @@ public class Histogram extends Pane {
 	private final List<TimelineDataSet> timelineDataSets;
 
 	private List<TimelineCategory> groupedCategories;
-	
+
 	private final List<HistogramSelectionChangeListener> selectionChangeListeners;
 
 	public Histogram(List<TimelineDataSet> timelineDataSets) {
 		this.timelineDataSets = timelineDataSets;
 
-		defaultGroupingMethod = GroupingMethod.defaultForDatasets(timelineDataSets);
+		defaultGroupingMethod = Grouper.getDefaultGroupingMethodForDatasets(timelineDataSets);
 
 		groupingMethod = defaultGroupingMethod;
-		
+
 		selectionChangeListeners = new LinkedList<>();
 
 		initializeGUI();
@@ -62,10 +64,10 @@ public class Histogram extends Pane {
 	public Histogram(List<TimelineDataSet> timelineDataSets, GroupingMethod groupingMethod) {
 		this.timelineDataSets = timelineDataSets;
 
-		defaultGroupingMethod = GroupingMethod.defaultForDatasets(timelineDataSets);
+		defaultGroupingMethod = Grouper.getDefaultGroupingMethodForDatasets(timelineDataSets);
 
 		this.groupingMethod = groupingMethod;
-		
+
 		selectionChangeListeners = new LinkedList<>();
 
 		initializeGUI();
@@ -227,11 +229,11 @@ public class Histogram extends Pane {
 			firstSeries = false;
 		}
 	}
-	
+
 	public void addSelectionChangeListener(HistogramSelectionChangeListener listener) {
 		selectionChangeListeners.add(listener);
 	}
-	
+
 	public void removeSelectionChangeListener(HistogramSelectionChangeListener listener) {
 		selectionChangeListeners.remove(listener);
 	}
@@ -239,12 +241,13 @@ public class Histogram extends Pane {
 	public void selectionChanged(int currentLeftTickIndex, int currentRightTickIndex) {
 		Date beginning = groupedCategories.get(0).getTimelineChartDataList().get(currentLeftTickIndex).getBeginning();
 		Date end = groupedCategories.get(0).getTimelineChartDataList().get(currentRightTickIndex).getEnd();
-		HistogramSelectionChangeEvent event = new HistogramSelectionChangeEvent(this, beginning, end, currentLeftTickIndex, currentRightTickIndex);
+		HistogramSelectionChangeEvent event = new HistogramSelectionChangeEvent(this, beginning, end,
+				currentLeftTickIndex, currentRightTickIndex);
 		for (HistogramSelectionChangeListener listener : selectionChangeListeners) {
 			listener.selectionChanged(event);
 		}
 	}
-	
+
 	public List<TimelineCategory> getFilteredEvents(int firstElement, int lastElement) {
 		List<TimelineCategory> result = new ArrayList<>(groupedCategories.size());
 		for (TimelineCategory category : groupedCategories) {

@@ -5,7 +5,6 @@ import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.PieChart.Data;
 import javafx.scene.layout.Pane;
@@ -66,6 +65,7 @@ public class Clock extends Pane {
 
 		data = new Data(null, 1);
 		chartData.add(data);
+		data.getNode().setStyle("-fx-background-color: linear (100%,100%) to (100%,100%) stops (100%, yellow) (100%, yellow);");
 
 		data = new Data(null, 2);
 		chartData.add(data);

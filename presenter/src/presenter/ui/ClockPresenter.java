@@ -12,7 +12,7 @@ import model.dataset.TimelineDataSet;
 import presenter.generator.RandomDataGenerator;
 import clock.view.Clock;
 
-public class ClockMainWindow extends Application {
+public class ClockPresenter extends Application {
 
 	public static void main(String[] args) {
 		launch();
