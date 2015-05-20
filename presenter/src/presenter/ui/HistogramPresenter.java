@@ -38,10 +38,9 @@ public class HistogramPresenter extends Application {
 			primaryStage.setTitle("Histogram test");
 
 			long currentTimeMillis = System.currentTimeMillis();
-//			long timeRange = yearsInMiliseconds(5);			//MONTHS
-			long timeRange = yearsInMiliseconds(1);			//WEEKS
-//			long timeRange = yearsInMiliseconds(1)/12;		//DAYS
-//			long timeRange = yearsInMiliseconds(1)/60;		//HOURS
+		
+			long timeRange = yearsInMiliseconds(1)/12;	
+			
 			List<TimelineDataSet> timelineDataSets = new ArrayList<TimelineDataSet>();
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
 					currentTimeMillis), 100, Color.GOLD));
@@ -54,8 +53,7 @@ public class HistogramPresenter extends Application {
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
 					currentTimeMillis), 100, Color.RED));
 
-			Histogram histogram = new Histogram(timelineDataSets);
-			histogram.setGroupingMethod(GroupingMethod.DAYS);
+			Histogram histogram = new Histogram(timelineDataSets, GroupingMethod.DAYS_10);
 
 			histogram.addSelectionChangeListener(new HistogramSelectionChangeListener() {
 				@Override

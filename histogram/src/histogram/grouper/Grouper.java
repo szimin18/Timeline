@@ -47,7 +47,49 @@ public class Grouper {
 	}
 
 	public static enum GroupingMethod {
-		MONTHS {
+		YEARS {
+			@Override
+			protected void setInitialTime(Calendar calendar) {
+				setFieldsDefaultsRetainingGiven(calendar);
+			}
+
+			@Override
+			protected void setNextTime(Calendar calendar) {
+				calendar.add(Calendar.YEAR, 1);
+			}
+
+			@Override
+			protected String getTimeDescription(Calendar calendar) {
+				return TimeLabelHelper.getYearTwoDigitLabel(calendar);
+			}
+
+			@Override
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.yearEstimateInMiliseconds();
+			}
+		},
+		MONTHS_3 {
+			@Override
+			protected void setInitialTime(Calendar calendar) {
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH);
+			}
+
+			@Override
+			protected void setNextTime(Calendar calendar) {
+				calendar.add(Calendar.MONTH, 3);
+			}
+
+			@Override
+			protected String getTimeDescription(Calendar calendar) {
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getYearTwoDigitLabel(calendar));
+			}
+
+			@Override
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.monthEstimateInMiliseconds();
+			}
+		},
+		MONTHS_1 {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
 				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH);
@@ -60,8 +102,7 @@ public class Grouper {
 
 			@Override
 			protected String getTimeDescription(Calendar calendar) {
-				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar),
-						TimeLabelHelper.getYearTwoDigitLabel(calendar));
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getYearTwoDigitLabel(calendar));
 			}
 
 			@Override
@@ -69,41 +110,51 @@ public class Grouper {
 				return TimeStampHelper.monthEstimateInMiliseconds();
 			}
 		},
-
-		WEEKS {
+		DAYS_10 {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
-				// TODO remove this enum value
-
-				// setFieldsDefaultsRetainingGiven(calendar, retainedFields);
-				// calendar.set(Calendar.DAY_OF_WEEK,
-				// calendar.getFirstDayOfWeek()// ,
-				// // Calendar.HOUR_OF_DAY, 0,
-				// // /Calendar.MINUTE, 0
-				// );
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH);
 			}
 
 			@Override
 			protected void setNextTime(Calendar calendar) {
-				// calendar.add(Calendar.DAY_OF_MONTH, 7);
+				calendar.add(Calendar.DAY_OF_MONTH, 10);
 			}
 
 			@Override
 			protected String getTimeDescription(Calendar calendar) {
-				return "";
-				// return String.format("%d week of %s",
-				// calendar.get(Calendar.WEEK_OF_YEAR),
-				// getYearLabel(calendar.get(Calendar.YEAR)));
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+						TimeLabelHelper.getYearTwoDigitLabel(calendar));
 			}
 
 			@Override
 			protected long getEstimatedGroupSpanInMillis() {
-				return 1;
-				// return DAYS.getEstimatedGroupSpanInMillis() * 7;
+				return TimeStampHelper.dayInMiliseconds();
 			}
 		},
+		DAYS_3 {
+			@Override
+			protected void setInitialTime(Calendar calendar) {
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH);
+			}
 
-		DAYS {
+			@Override
+			protected void setNextTime(Calendar calendar) {
+				calendar.add(Calendar.DAY_OF_MONTH, 3);
+			}
+
+			@Override
+			protected String getTimeDescription(Calendar calendar) {
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+						TimeLabelHelper.getYearTwoDigitLabel(calendar));
+			}
+
+			@Override
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.dayInMiliseconds();
+			}
+		},
+		DAYS_1 {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
 				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH);
@@ -116,8 +167,8 @@ public class Grouper {
 
 			@Override
 			protected String getTimeDescription(Calendar calendar) {
-				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar),
-						TimeLabelHelper.getDayOfMonthLabel(calendar), TimeLabelHelper.getYearTwoDigitLabel(calendar));
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+						TimeLabelHelper.getYearTwoDigitLabel(calendar));
 			}
 
 			@Override
@@ -125,8 +176,51 @@ public class Grouper {
 				return TimeStampHelper.dayInMiliseconds();
 			}
 		},
+		HOURS_8 {
+			@Override
+			protected void setInitialTime(Calendar calendar) {
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR);
+			}
 
-		HOURS {
+			@Override
+			protected void setNextTime(Calendar calendar) {
+				calendar.add(Calendar.HOUR_OF_DAY, 8);
+			}
+
+			@Override
+			protected String getTimeDescription(Calendar calendar) {
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+						TimeLabelHelper.getYearTwoDigitLabel(calendar), TimeLabelHelper.getHourAndMinuteLabel(calendar));
+			}
+
+			@Override
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.hourInMiliseconds();
+			}
+		},
+		HOURS_3 {
+			@Override
+			protected void setInitialTime(Calendar calendar) {
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR);
+			}
+
+			@Override
+			protected void setNextTime(Calendar calendar) {
+				calendar.add(Calendar.HOUR_OF_DAY, 3);
+			}
+
+			@Override
+			protected String getTimeDescription(Calendar calendar) {
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+						TimeLabelHelper.getYearTwoDigitLabel(calendar), TimeLabelHelper.getHourAndMinuteLabel(calendar));
+			}
+
+			@Override
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.hourInMiliseconds();
+			}
+		},
+		HOURS_1 {
 			@Override
 			protected void setInitialTime(Calendar calendar) {
 				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR);
@@ -139,16 +233,191 @@ public class Grouper {
 
 			@Override
 			protected String getTimeDescription(Calendar calendar) {
-				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar),
-						TimeLabelHelper.getDayOfMonthLabel(calendar), TimeLabelHelper.getYearTwoDigitLabel(calendar),
-						TimeLabelHelper.getHourAndMinuteLabel(calendar));
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+						TimeLabelHelper.getYearTwoDigitLabel(calendar), TimeLabelHelper.getHourAndMinuteLabel(calendar));
 			}
 
 			@Override
 			protected long getEstimatedGroupSpanInMillis() {
 				return TimeStampHelper.hourInMiliseconds();
 			}
-		};
+		},
+		MINUTES_20 {
+			@Override
+			protected void setInitialTime(Calendar calendar) {
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR, Calendar.MINUTE);
+			}
+
+			@Override
+			protected void setNextTime(Calendar calendar) {
+				calendar.add(Calendar.MINUTE, 20);
+			}
+
+			@Override
+			protected String getTimeDescription(Calendar calendar) {
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+						TimeLabelHelper.getYearTwoDigitLabel(calendar), TimeLabelHelper.getHourAndMinuteLabel(calendar));
+			}
+
+			@Override
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.hourInMiliseconds();
+			}
+		},
+		MINUTES_8 {
+			@Override
+			protected void setInitialTime(Calendar calendar) {
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR, Calendar.MINUTE);
+			}
+
+			@Override
+			protected void setNextTime(Calendar calendar) {
+				calendar.add(Calendar.MINUTE, 8);
+			}
+
+			@Override
+			protected String getTimeDescription(Calendar calendar) {
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+						TimeLabelHelper.getYearTwoDigitLabel(calendar), TimeLabelHelper.getHourAndMinuteLabel(calendar));
+			}
+
+			@Override
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.hourInMiliseconds();
+			}
+		},
+		MINUTES_3 {
+			@Override
+			protected void setInitialTime(Calendar calendar) {
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR, Calendar.MINUTE);
+			}
+
+			@Override
+			protected void setNextTime(Calendar calendar) {
+				calendar.add(Calendar.MINUTE, 3);
+			}
+
+			@Override
+			protected String getTimeDescription(Calendar calendar) {
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+						TimeLabelHelper.getYearTwoDigitLabel(calendar), TimeLabelHelper.getHourAndMinuteLabel(calendar));
+			}
+
+			@Override
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.hourInMiliseconds();
+			}
+		},
+		MINUTES_1 {
+			@Override
+			protected void setInitialTime(Calendar calendar) {
+				setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR, Calendar.MINUTE);
+			}
+
+			@Override
+			protected void setNextTime(Calendar calendar) {
+				calendar.add(Calendar.MINUTE, 1);
+			}
+
+			@Override
+			protected String getTimeDescription(Calendar calendar) {
+				return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+						TimeLabelHelper.getYearTwoDigitLabel(calendar), TimeLabelHelper.getHourAndMinuteLabel(calendar));
+			}
+
+			@Override
+			protected long getEstimatedGroupSpanInMillis() {
+				return TimeStampHelper.hourInMiliseconds();
+			}
+		},
+        SECONDS_20 {
+            @Override
+            protected void setInitialTime(Calendar calendar) {
+                setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR, Calendar.MINUTE, Calendar.SECOND);
+            }
+
+            @Override
+            protected void setNextTime(Calendar calendar) {
+                calendar.add(Calendar.MINUTE, 20);
+            }
+
+            @Override
+            protected String getTimeDescription(Calendar calendar) {
+                return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+                        TimeLabelHelper.getYearTwoDigitLabel(calendar), TimeLabelHelper.getHourAndMinuteLabel(calendar));
+            }
+
+            @Override
+            protected long getEstimatedGroupSpanInMillis() {
+                return TimeStampHelper.hourInMiliseconds();
+            }
+        },
+        SECONDS_8 {
+            @Override
+            protected void setInitialTime(Calendar calendar) {
+                setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR, Calendar.MINUTE, Calendar.SECOND);
+            }
+
+            @Override
+            protected void setNextTime(Calendar calendar) {
+                calendar.add(Calendar.MINUTE, 8);
+            }
+
+            @Override
+            protected String getTimeDescription(Calendar calendar) {
+                return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+                        TimeLabelHelper.getYearTwoDigitLabel(calendar), TimeLabelHelper.getHourAndMinuteLabel(calendar));
+            }
+
+            @Override
+            protected long getEstimatedGroupSpanInMillis() {
+                return TimeStampHelper.hourInMiliseconds();
+            }
+        },
+        SECONDS_3 {
+            @Override
+            protected void setInitialTime(Calendar calendar) {
+                setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR, Calendar.MINUTE, Calendar.SECOND);
+            }
+
+            @Override
+            protected void setNextTime(Calendar calendar) {
+                calendar.add(Calendar.MINUTE, 3);
+            }
+
+            @Override
+            protected String getTimeDescription(Calendar calendar) {
+                return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+                        TimeLabelHelper.getYearTwoDigitLabel(calendar), TimeLabelHelper.getHourAndMinuteLabel(calendar));
+            }
+
+            @Override
+            protected long getEstimatedGroupSpanInMillis() {
+                return TimeStampHelper.hourInMiliseconds();
+            }
+        },
+        SECONDS_1 {
+            @Override
+            protected void setInitialTime(Calendar calendar) {
+                setFieldsDefaultsRetainingGiven(calendar, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR, Calendar.MINUTE, Calendar.SECOND);
+            }
+
+            @Override
+            protected void setNextTime(Calendar calendar) {
+                calendar.add(Calendar.MINUTE, 1);
+            }
+
+            @Override
+            protected String getTimeDescription(Calendar calendar) {
+                return Joiner.on(' ').join(TimeLabelHelper.getMonthLabel(calendar), TimeLabelHelper.getDayOfMonthLabel(calendar),
+                        TimeLabelHelper.getYearTwoDigitLabel(calendar), TimeLabelHelper.getHourAndMinuteLabel(calendar));
+            }
+
+            @Override
+            protected long getEstimatedGroupSpanInMillis() {
+                return TimeStampHelper.hourInMiliseconds();
+            }
+        };
 
 		private static final int TARGET_NUMBER_OF_BARS = 50;
 
@@ -222,8 +491,8 @@ public class Grouper {
 						eventsList.add(eventsProvider.getNextEvent());
 					}
 
-					timelineCategory.addTimelineChartData(new TimelineChartData(eventsList, timeRange.getDescription(),
-							timeRange.getStartTime(), timeRange.getEndTime()));
+					timelineCategory.addTimelineChartData(new TimelineChartData(eventsList, timeRange.getDescription(), timeRange
+							.getStartTime(), timeRange.getEndTime()));
 				}
 
 				boolean anySeriesHasMoreEvents = false;

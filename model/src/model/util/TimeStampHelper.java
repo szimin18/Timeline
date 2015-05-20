@@ -6,27 +6,27 @@ public final class TimeStampHelper {
 	}
 	
 	public static long secondInMiliseconds() {
-		return 1000;
+		return 1000l;
 	}
 	
 	public static long minuteInMiliseconds() {
-		return 1000 * 60;
+		return 1000l * 60;
 	}
 	
 	public static long hourInMiliseconds() {
-		return 1000 * 60 * 60;
+		return 1000l * 60 * 60;
 	}
 	
 	public static long dayInMiliseconds() {
-		return 1000 * 60 * 60 * 24;
+		return 1000l * 60 * 60 * 24;
 	}
 	
 	public static long monthEstimateInMiliseconds() {
-		long i = 1000 * 60 * 60 * 24 * 30; // < 0 !!!!!
+		long i = 1000l * 60 * 60 * 24 * 30; // < 0 !!!!!
 		return i;
 	}
 	
 	public static long yearEstimateInMiliseconds() {
-		return (long)(1000 * 60 * 60 * 24 * 365.25);
+		return (long)(1000l * 60 * 60 * 24 * 365.25);
 	}
 }

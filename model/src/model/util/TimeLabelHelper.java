@@ -13,7 +13,7 @@ public final class TimeLabelHelper {
 	}
 
 	public static String getYearTwoDigitLabel(Calendar calendar) {
-		return String.format("'%s", String.valueOf(calendar.get(Calendar.YEAR) % 100));
+		return String.format("'%02d", calendar.get(Calendar.YEAR) % 100);
 	}
 
 	public static String getMonthLabel(Calendar calendar) {
