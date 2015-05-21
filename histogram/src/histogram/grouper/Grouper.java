@@ -86,7 +86,7 @@ public class Grouper {
 
 			@Override
 			protected long getEstimatedGroupSpanInMillis() {
-				return TimeStampHelper.monthEstimateInMiliseconds();
+				return TimeStampHelper.monthEstimateInMiliseconds() * 3;
 			}
 		},
 		MONTHS_1 {
@@ -129,7 +129,7 @@ public class Grouper {
 
 			@Override
 			protected long getEstimatedGroupSpanInMillis() {
-				return TimeStampHelper.dayInMiliseconds();
+				return TimeStampHelper.dayInMiliseconds() * 10;
 			}
 		},
 		DAYS_3 {
@@ -151,7 +151,7 @@ public class Grouper {
 
 			@Override
 			protected long getEstimatedGroupSpanInMillis() {
-				return TimeStampHelper.dayInMiliseconds();
+				return TimeStampHelper.dayInMiliseconds() * 3;
 			}
 		},
 		DAYS_1 {
@@ -195,7 +195,7 @@ public class Grouper {
 
 			@Override
 			protected long getEstimatedGroupSpanInMillis() {
-				return TimeStampHelper.hourInMiliseconds();
+				return TimeStampHelper.hourInMiliseconds() * 8;
 			}
 		},
 		HOURS_3 {
@@ -217,7 +217,7 @@ public class Grouper {
 
 			@Override
 			protected long getEstimatedGroupSpanInMillis() {
-				return TimeStampHelper.hourInMiliseconds();
+				return TimeStampHelper.hourInMiliseconds() * 3;
 			}
 		},
 		HOURS_1 {
@@ -261,7 +261,7 @@ public class Grouper {
 
 			@Override
 			protected long getEstimatedGroupSpanInMillis() {
-				return TimeStampHelper.hourInMiliseconds();
+				return TimeStampHelper.minuteInMiliseconds() * 20;
 			}
 		},
 		MINUTES_8 {
@@ -283,7 +283,7 @@ public class Grouper {
 
 			@Override
 			protected long getEstimatedGroupSpanInMillis() {
-				return TimeStampHelper.hourInMiliseconds();
+				return TimeStampHelper.minuteInMiliseconds() * 8;
 			}
 		},
 		MINUTES_3 {
@@ -305,7 +305,7 @@ public class Grouper {
 
 			@Override
 			protected long getEstimatedGroupSpanInMillis() {
-				return TimeStampHelper.hourInMiliseconds();
+				return TimeStampHelper.minuteInMiliseconds() * 3;
 			}
 		},
 		MINUTES_1 {
@@ -327,7 +327,7 @@ public class Grouper {
 
 			@Override
 			protected long getEstimatedGroupSpanInMillis() {
-				return TimeStampHelper.hourInMiliseconds();
+				return TimeStampHelper.minuteInMiliseconds();
 			}
 		},
         SECONDS_20 {
@@ -349,7 +349,7 @@ public class Grouper {
 
             @Override
             protected long getEstimatedGroupSpanInMillis() {
-                return TimeStampHelper.hourInMiliseconds();
+                return TimeStampHelper.secondInMiliseconds() * 20;
             }
         },
         SECONDS_8 {
@@ -371,7 +371,7 @@ public class Grouper {
 
             @Override
             protected long getEstimatedGroupSpanInMillis() {
-                return TimeStampHelper.hourInMiliseconds();
+                return TimeStampHelper.secondInMiliseconds() * 8;
             }
         },
         SECONDS_3 {
@@ -393,7 +393,7 @@ public class Grouper {
 
             @Override
             protected long getEstimatedGroupSpanInMillis() {
-                return TimeStampHelper.hourInMiliseconds();
+                return TimeStampHelper.secondInMiliseconds() * 3;
             }
         },
         SECONDS_1 {
@@ -415,7 +415,7 @@ public class Grouper {
 
             @Override
             protected long getEstimatedGroupSpanInMillis() {
-                return TimeStampHelper.hourInMiliseconds();
+                return TimeStampHelper.secondInMiliseconds();
             }
         };
 
