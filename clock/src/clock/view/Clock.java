@@ -1,8 +1,10 @@
 package clock.view;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -65,6 +67,22 @@ public class Clock extends Pane {
 				"-fx-pie-color: hsb(%f, %f%%%%, %%f%%%%); -fx-border-color: derive(-fx-pie-color, -40%%%%);",
 				chartBaseHue, chartBaseSaturation);
 
+		final Set<Node> allNodes = new HashSet<>();
+
+		stackPane.addEventHandler(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				for (Node node : allNodes) {
+					if (node.contains(event.getX() - stackPane.widthProperty().doubleValue() / 2, event.getY()
+							- stackPane.heightProperty().doubleValue() / 2)) {
+						node.setEffect(new Lighting());
+					} else {
+						node.setEffect(null);
+					}
+				}
+			}
+		});
+
 		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
 			final PieChart chart = new PieChart();
 			stackPane.getChildren().add(chart);
@@ -106,18 +124,36 @@ public class Clock extends Pane {
 				// data.getNode().setStyle("-fx-border-width: 1px;");
 
 				Tooltip.install(node, new Tooltip(timelineChartData.getDescription()));
-				node.setOnMouseMoved(new EventHandler<MouseEvent>() {
-					@Override
-					public void handle(MouseEvent event) {
-						node.setEffect(new Lighting());
-					}
-				});
-				node.setOnMouseExited(new EventHandler<MouseEvent>() {
-					@Override
-					public void handle(MouseEvent event) {
-						node.setEffect(null);
-					}
-				});
+
+				allNodes.add(node);
+
+				// node.hoverProperty().addListener(new
+				// ChangeListener<Boolean>() {
+				// @Override
+				// public void changed(ObservableValue<? extends Boolean>
+				// observable, Boolean oldValue,
+				// Boolean newValue) {
+				// if (newValue) {
+				// node.setEffect(new Lighting());
+				// } else {
+				// node.setEffect(null);
+				// }
+				// }
+				// });
+
+				//
+				// node.setOnMouseMoved(new EventHandler<MouseEvent>() {
+				// @Override
+				// public void handle(MouseEvent event) {
+				// node.setEffect(new Lighting());
+				// }
+				// });
+				// node.setOnMouseExited(new EventHandler<MouseEvent>() {
+				// @Override
+				// public void handle(MouseEvent event) {
+				// node.setEffect(null);
+				// }
+				// });
 			}
 
 			chartSizeIndex--;
