@@ -27,11 +27,9 @@ public class HistogramPresenter extends Application {
 		/*
 		 * TODO
 		 * 
-		 * - TimeStampHelper:25 i < 0 !!!
 		 * - add grouping methods
 		 * - listeners on node selected
 		 * - multi node selection
-		 * - detailed info on hover
 		 */
 		
 		try {
@@ -53,7 +51,7 @@ public class HistogramPresenter extends Application {
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
 					currentTimeMillis), 100, Color.RED));
 
-			Histogram histogram = new Histogram(timelineDataSets, GroupingMethod.DAYS_10);
+			Histogram histogram = new Histogram(timelineDataSets);
 
 			histogram.addSelectionChangeListener(new HistogramSelectionChangeListener() {
 				@Override

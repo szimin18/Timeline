@@ -7,16 +7,22 @@ import histogram.grouper.Grouper.GroupingMethod;
 import histogram.selector.Selector;
 import histogram.selector.Selector.TimelineTick;
 
+import java.awt.Event;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
+import javafx.event.EventType;
 import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.chart.CategoryAxis;
@@ -24,9 +30,13 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.StackedBarChart;
 import javafx.scene.chart.XYChart.Data;
 import javafx.scene.chart.XYChart.Series;
+import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.transform.Transform;
+import javafx.stage.Popup;
+import javafx.stage.PopupBuilder;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineCategory;
 import model.event.TimelineChartData;
@@ -48,6 +58,14 @@ public class Histogram extends Pane {
 	private List<TimelineCategory> groupedCategories;
 
 	private final List<HistogramSelectionChangeListener> selectionChangeListeners;
+	
+	private final Map<Bounds, TimelineChartData> boundsToData; //TODO should be replaced with sth more efficient 
+	
+	private final Map<Bounds, Bounds> boundsToTransformedBounds;
+	
+	private Popup popup;
+	
+	private final Label popupLabel;
 
 	public Histogram(List<TimelineDataSet> timelineDataSets) {
 		this.timelineDataSets = timelineDataSets;
@@ -57,7 +75,15 @@ public class Histogram extends Pane {
 		groupingMethod = defaultGroupingMethod;
 
 		selectionChangeListeners = new LinkedList<>();
-
+		
+		boundsToData = new HashMap<>();
+		
+		boundsToTransformedBounds = new HashMap<>();
+		
+		popupLabel = new Label();
+		
+		setupPopup();
+		
 		initializeGUI();
 	}
 
@@ -69,8 +95,21 @@ public class Histogram extends Pane {
 		this.groupingMethod = groupingMethod;
 
 		selectionChangeListeners = new LinkedList<>();
+		
+		boundsToData = new HashMap<>();
+		
+		boundsToTransformedBounds = new HashMap<>();
 
+		popupLabel = new Label();
+		
+		setupPopup();
+		
 		initializeGUI();
+	}
+
+	private void setupPopup() {
+		popupLabel.setStyle("-fx-background-color: white;-fx-border-color: black");
+		popup = PopupBuilder.create().content(popupLabel).width(200).height(50).autoFix(true).build();
 	}
 
 	public void setGroupingMethod(GroupingMethod groupingMethod) {
@@ -123,7 +162,7 @@ public class Histogram extends Pane {
 		final Selector selector = new Selector(this);
 
 		CategoryAxis xAxis = new CategoryAxis();
-		NumberAxis yAxis = new NumberAxis();
+		final NumberAxis yAxis = new NumberAxis();
 
 		final StackedBarChart<String, Number> chart = new StackedBarChart<>(xAxis, yAxis);
 
@@ -195,14 +234,28 @@ public class Histogram extends Pane {
 
 			chartData.add(series);
 
-			for (TimelineChartData timelineChartData : timelineCategory.getTimelineChartDataList()) {
+			for (final TimelineChartData timelineChartData : timelineCategory.getTimelineChartDataList()) {
 				Data<String, Number> data = new Data<String, Number>(timelineChartData.getDescription(),
 						timelineChartData.getEventsCount());
 				seriesData.add(data);
 
-				Node node = data.getNode();
-				node.setStyle(String.format("-fx-bar-fill: %s;", timelineCategory.getColorHex()));
+				final Node node = data.getNode();
+				node.setStyle(String.format("-fx-bar-fill: %s", timelineCategory.getColorHex()));
+				 
+				node.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
+					public void changed(ObservableValue<? extends Bounds> observable, Bounds oldValue, Bounds newValue) {
+						Node parent = node.getParent();
+						Bounds newTranformed = parent.localToScene(newValue);
 
+						if (boundsToTransformedBounds.containsKey(oldValue)) {
+							Bounds oldTransformed = boundsToTransformedBounds.get(oldValue);
+							boundsToData.remove(oldTransformed);
+						}
+						boundsToTransformedBounds.put(newValue, newTranformed);
+						boundsToData.put(newTranformed, timelineChartData);
+					};
+				});
+				
 				if (firstSeries) {
 					categoriesNamesList.add(data.getXValue());
 
@@ -228,6 +281,28 @@ public class Histogram extends Pane {
 
 			firstSeries = false;
 		}
+		
+		//TODO should be replaced with sth more efficient 
+		addEventHandler(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				boolean found = false;
+				for (Bounds bounds : boundsToData.keySet()) {
+					if (bounds.contains(localToScene(event.getX() - yAxis.getWidth(), event.getY()))) {
+						final TimelineChartData data = boundsToData.get(bounds);
+						found = true;
+						popupLabel.setText(String.format("%s\n%d events", data.getDescription(), data.getEventsCount()));
+						popup.setAnchorX(event.getScreenX()+ 20);
+						popup.setAnchorY(event.getScreenY() + 20);
+						popup.show(Histogram.this.getScene().getWindow());
+						break;
+					}
+				}
+				if (!found) {
+					popup.hide();
+				}
+			}
+		});
 	}
 
 	public void addSelectionChangeListener(HistogramSelectionChangeListener listener) {
