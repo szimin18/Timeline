@@ -10,9 +10,11 @@ import histogram.selector.Selector.TimelineTick;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -34,11 +36,17 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.transform.Transform;
 import javafx.stage.Popup;
 import javafx.stage.PopupBuilder;
+import javafx.util.Pair;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineCategory;
 import model.event.TimelineChartData;
 
+@SuppressWarnings("deprecation")
 public class Histogram extends Pane {
+
+	private static final String SELECTED_STYLE = "-fx-border-color: black; -fx-border-width: 3; -fx-border-style: dotted";
+	private static final String NOT_SELECTED_STYLE = "-fx-bar-fill: %s;";
+	
 
 	private final GroupingMethod defaultGroupingMethod;
 
@@ -56,7 +64,9 @@ public class Histogram extends Pane {
 
 	private final List<HistogramFilterChangeListener> filterChangeListeners;
 	
-	private final Map<Bounds, TimelineChartData> boundsToData; //TODO should be replaced with sth more efficient 
+	private final Map<Bounds, Pair<TimelineChartData, Node>> boundsToBars; //TODO should be replaced with sth more efficient 
+	
+	private final Set<TimelineChartData> selected;
 	
 	private final Map<Bounds, Bounds> boundsToTransformedBounds;
 	
@@ -73,9 +83,11 @@ public class Histogram extends Pane {
 
 		filterChangeListeners = new LinkedList<>();
 		
-		boundsToData = new HashMap<>();
+		boundsToBars = new HashMap<>();
 		
 		boundsToTransformedBounds = new HashMap<>();
+		
+		selected = new HashSet<>();
 		
 		popupLabel = new Label();
 		
@@ -93,9 +105,11 @@ public class Histogram extends Pane {
 
 		filterChangeListeners = new LinkedList<>();
 		
-		boundsToData = new HashMap<>();
+		boundsToBars = new HashMap<>();
 		
 		boundsToTransformedBounds = new HashMap<>();
+		
+		selected = new HashSet<>();
 
 		popupLabel = new Label();
 		
@@ -237,7 +251,7 @@ public class Histogram extends Pane {
 				seriesData.add(data);
 
 				final Node node = data.getNode();
-				node.setStyle(String.format("-fx-bar-fill: %s", timelineCategory.getColorHex()));
+				node.setStyle(String.format(NOT_SELECTED_STYLE, timelineCategory.getColorHex()));
 				 
 				node.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
 					public void changed(ObservableValue<? extends Bounds> observable, Bounds oldValue, Bounds newValue) {
@@ -246,10 +260,11 @@ public class Histogram extends Pane {
 
 						if (boundsToTransformedBounds.containsKey(oldValue)) {
 							Bounds oldTransformed = boundsToTransformedBounds.get(oldValue);
-							boundsToData.remove(oldTransformed);
+							boundsToBars.remove(oldTransformed);
+							boundsToTransformedBounds.remove(oldValue);
 						}
 						boundsToTransformedBounds.put(newValue, newTranformed);
-						boundsToData.put(newTranformed, timelineChartData);
+						boundsToBars.put(newTranformed, new Pair<>(timelineChartData, node));
 					};
 				});
 				
@@ -284,9 +299,9 @@ public class Histogram extends Pane {
 			@Override
 			public void handle(MouseEvent event) {
 				boolean found = false;
-				for (Bounds bounds : boundsToData.keySet()) {
+				for (Bounds bounds : boundsToBars.keySet()) {
 					if (bounds.contains(localToScene(event.getX() - yAxis.getWidth(), event.getY()))) {
-						final TimelineChartData data = boundsToData.get(bounds);
+						TimelineChartData data = boundsToBars.get(bounds).getKey();
 						found = true;
 						popupLabel.setText(String.format("%s\n%d events", data.getDescription(), data.getEventsCount()));
 						popup.setAnchorX(event.getScreenX()+ 20);
@@ -297,6 +312,29 @@ public class Histogram extends Pane {
 				}
 				if (!found) {
 					popup.hide();
+				}
+			}
+		});
+		
+		addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				for (Bounds bounds : boundsToBars.keySet()) {
+					if (bounds.contains(localToScene(event.getX(), event.getY()))) {
+						TimelineChartData data = boundsToBars.get(bounds).getKey();
+						Node node = boundsToBars.get(bounds).getValue();
+						if (selected.contains(data)) {
+							selected.remove(data);
+							node.setStyle(node.getStyle().split(";")[0] + ";");
+							node.applyCss();
+						} else {
+							selected.add(data);
+							node.setStyle(node.getStyle() + SELECTED_STYLE);
+							node.applyCss();
+						}
+						System.out.println(selected.size());
+						break;
+					}
 				}
 			}
 		});
