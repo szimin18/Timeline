@@ -2,45 +2,34 @@ package histogram.event;
 
 import histogram.view.Histogram;
 
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-import model.event.TimelineCategory;
+import model.event.TimelineChartData;
+import model.event.TimelineEvent;
 
 public class HistogramSelectionChangeEvent {
-
 	private final Histogram source;
-
-	private final Date beginning;
-
-	private final Date end;
 	
-	private final int firstElement;
-	
-	private final int lastElement;
+	private final Set<TimelineChartData> selectedData;
 
-	public HistogramSelectionChangeEvent(Histogram source, Date beginning, Date end, int firstElement, int lastElement) {
+	public HistogramSelectionChangeEvent(Histogram source, Set<TimelineChartData> selectedData) {
 		this.source = source;
-		this.beginning = beginning;
-		this.end = end;
-		this.firstElement = firstElement;
-		this.lastElement = lastElement;
+		this.selectedData = selectedData;
 	}
-
+	
 	public Histogram getSource() {
 		return source;
 	}
-
-	public Date getBeginning() {
-		return beginning;
+	
+	public List<TimelineEvent> getSelectedEvents() {
+		List<TimelineEvent> result = new ArrayList<>();
+		for (TimelineChartData data: selectedData) {
+			result.addAll(data.getEventsList());
+		}
+		return result;
 	}
-
-	public Date getEnd() {
-		return end;
-	}
-
-	public List<TimelineCategory> getFilteredEvents() {
-		return source.getFilteredEvents(firstElement, lastElement);
-	}
+	
 	
 }

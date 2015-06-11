@@ -1,8 +1,9 @@
 package presenter.ui;
 
+import histogram.event.HistogramFilterChangeEvent;
+import histogram.event.HistogramFilterChangeListener;
 import histogram.event.HistogramSelectionChangeEvent;
 import histogram.event.HistogramSelectionChangeListener;
-import histogram.grouper.Grouper.GroupingMethod;
 import histogram.view.Histogram;
 
 import java.util.ArrayList;
@@ -24,15 +25,6 @@ public class HistogramPresenter extends Application {
 
 	@Override
 	public void start(Stage primaryStage) {
-		/*
-		 * TODO
-		 * 
-		 * - TimeStampHelper:25 i < 0 !!!
-		 * - add grouping methods
-		 * - listeners on node selected
-		 * - multi node selection
-		 * - detailed info on hover
-		 */
 		
 		try {
 			primaryStage.setTitle("Histogram test");
@@ -53,12 +45,19 @@ public class HistogramPresenter extends Application {
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
 					currentTimeMillis), 100, Color.RED));
 
-			Histogram histogram = new Histogram(timelineDataSets, GroupingMethod.DAYS_10);
+			Histogram histogram = new Histogram(timelineDataSets);
 
+			histogram.addFilterChangeListener(new HistogramFilterChangeListener() {
+				@Override
+				public void filterChanged(HistogramFilterChangeEvent event) {
+					System.out.printf("Filter changed: %s - %s\n", event.getBeginning(), event.getEnd());
+				}
+			});
+			
 			histogram.addSelectionChangeListener(new HistogramSelectionChangeListener() {
 				@Override
 				public void selectionChanged(HistogramSelectionChangeEvent event) {
-					System.out.printf("Selection changed: %s - %s\n", event.getBeginning(), event.getEnd());
+					System.out.printf("Selection changed: %d selected events\n", event.getSelectedEvents().size());
 				}
 			});
 
