@@ -45,7 +45,6 @@ public final class Grouper {
 				List<TimelineEvent> eventsList = eventsMap.get(dayOfWeek).get(hour);
 				String dataDescription = String.format("%s %2d:00-%2d:00", dayOfWeek.toString(), hour, (hour + 1) % 24);
 				TimelineChartData timelineChartData = new TimelineChartData(eventsList, dataDescription, null, null);
-//						eventsList.get(0).getDate(), eventsList.get(eventsList.size() - 1).getDate());
 				dayOfWeekMap.put(hour, timelineChartData);
 			}
 			result.put(dayOfWeek, dayOfWeekMap);

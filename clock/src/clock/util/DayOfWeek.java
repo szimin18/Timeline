@@ -9,44 +9,79 @@ import java.util.Map;
 public enum DayOfWeek {
 	MONDAY {
 		@Override
-		protected String getStringRepresentation() {
+		public String toString() {
 			return "Monday";
+		}
+
+		@Override
+		public String getShortNameCapital() {
+			return "MON";
 		}
 	},
 	TUESDAY {
 		@Override
-		protected String getStringRepresentation() {
+		public String toString() {
 			return "Tuesday";
+		}
+
+		@Override
+		public String getShortNameCapital() {
+			return "TUE";
 		}
 	},
 	WEDNESDAY {
 		@Override
-		protected String getStringRepresentation() {
+		public String toString() {
 			return "Wednesday";
+		}
+
+		@Override
+		public String getShortNameCapital() {
+			return "WED";
 		}
 	},
 	THURSDAY {
 		@Override
-		protected String getStringRepresentation() {
+		public String toString() {
 			return "Thursday";
+		}
+
+		@Override
+		public String getShortNameCapital() {
+			return "THU";
 		}
 	},
 	FRIDAY {
 		@Override
-		protected String getStringRepresentation() {
+		public String toString() {
 			return "Friday";
+		}
+
+		@Override
+		public String getShortNameCapital() {
+			return "FRI";
 		}
 	},
 	SATURDAY {
 		@Override
-		protected String getStringRepresentation() {
+		public String toString() {
 			return "Saturday";
+		}
+
+		@Override
+		public String getShortNameCapital() {
+			return "SAT";
 		}
 	},
 	SUNDAY {
 		@Override
-		protected String getStringRepresentation() {
+		public String toString() {
 			return "Sunday";
+		}
+
+		@Override
+		public String getShortNameCapital() {
+			return "SUN";
 		}
 	};
 
@@ -78,9 +113,9 @@ public enum DayOfWeek {
 	}
 
 	@Override
-	public String toString() {
-		return getStringRepresentation();
-	}
+	public abstract String toString();
+
+	public abstract String getShortNameCapital();
 
 	public static DayOfWeek forCalendarIndex(int index) throws AssertionError {
 		if (CALENDAR_INDEX_TO_DAY_OF_WEEK_MAP.containsKey(index)) {
@@ -89,6 +124,4 @@ public enum DayOfWeek {
 			throw new AssertionError();
 		}
 	}
-
-	protected abstract String getStringRepresentation();
 }
