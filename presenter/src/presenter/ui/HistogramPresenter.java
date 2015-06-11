@@ -1,7 +1,7 @@
 package presenter.ui;
 
-import histogram.event.HistogramSelectionChangeEvent;
-import histogram.event.HistogramSelectionChangeListener;
+import histogram.event.HistogramFilterChangeEvent;
+import histogram.event.HistogramFilterChangeListener;
 import histogram.grouper.Grouper.GroupingMethod;
 import histogram.view.Histogram;
 
@@ -53,9 +53,9 @@ public class HistogramPresenter extends Application {
 
 			Histogram histogram = new Histogram(timelineDataSets);
 
-			histogram.addSelectionChangeListener(new HistogramSelectionChangeListener() {
+			histogram.addFilterChangeListener(new HistogramFilterChangeListener() {
 				@Override
-				public void selectionChanged(HistogramSelectionChangeEvent event) {
+				public void selectionChanged(HistogramFilterChangeEvent event) {
 					System.out.printf("Selection changed: %s - %s\n", event.getBeginning(), event.getEnd());
 				}
 			});

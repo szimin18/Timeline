@@ -7,7 +7,7 @@ import java.util.List;
 
 import model.event.TimelineCategory;
 
-public class HistogramSelectionChangeEvent {
+public class HistogramFilterChangeEvent {
 
 	private final Histogram source;
 
@@ -19,7 +19,7 @@ public class HistogramSelectionChangeEvent {
 	
 	private final int lastElement;
 
-	public HistogramSelectionChangeEvent(Histogram source, Date beginning, Date end, int firstElement, int lastElement) {
+	public HistogramFilterChangeEvent(Histogram source, Date beginning, Date end, int firstElement, int lastElement) {
 		this.source = source;
 		this.beginning = beginning;
 		this.end = end;

@@ -1,13 +1,12 @@
 package histogram.view;
 
-import histogram.event.HistogramSelectionChangeEvent;
-import histogram.event.HistogramSelectionChangeListener;
+import histogram.event.HistogramFilterChangeEvent;
+import histogram.event.HistogramFilterChangeListener;
 import histogram.grouper.Grouper;
 import histogram.grouper.Grouper.GroupingMethod;
 import histogram.selector.Selector;
 import histogram.selector.Selector.TimelineTick;
 
-import java.awt.Event;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,9 +19,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
-import javafx.event.EventType;
 import javafx.geometry.Bounds;
-import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.chart.CategoryAxis;
@@ -57,7 +54,7 @@ public class Histogram extends Pane {
 
 	private List<TimelineCategory> groupedCategories;
 
-	private final List<HistogramSelectionChangeListener> selectionChangeListeners;
+	private final List<HistogramFilterChangeListener> filterChangeListeners;
 	
 	private final Map<Bounds, TimelineChartData> boundsToData; //TODO should be replaced with sth more efficient 
 	
@@ -74,7 +71,7 @@ public class Histogram extends Pane {
 
 		groupingMethod = defaultGroupingMethod;
 
-		selectionChangeListeners = new LinkedList<>();
+		filterChangeListeners = new LinkedList<>();
 		
 		boundsToData = new HashMap<>();
 		
@@ -94,7 +91,7 @@ public class Histogram extends Pane {
 
 		this.groupingMethod = groupingMethod;
 
-		selectionChangeListeners = new LinkedList<>();
+		filterChangeListeners = new LinkedList<>();
 		
 		boundsToData = new HashMap<>();
 		
@@ -305,20 +302,20 @@ public class Histogram extends Pane {
 		});
 	}
 
-	public void addSelectionChangeListener(HistogramSelectionChangeListener listener) {
-		selectionChangeListeners.add(listener);
+	public void addFilterChangeListener(HistogramFilterChangeListener listener) {
+		filterChangeListeners.add(listener);
 	}
 
-	public void removeSelectionChangeListener(HistogramSelectionChangeListener listener) {
-		selectionChangeListeners.remove(listener);
+	public void removeFilterChangeListener(HistogramFilterChangeListener listener) {
+		filterChangeListeners.remove(listener);
 	}
 
 	public void selectionChanged(int currentLeftTickIndex, int currentRightTickIndex) {
 		Date beginning = groupedCategories.get(0).getTimelineChartDataList().get(currentLeftTickIndex).getBeginning();
 		Date end = groupedCategories.get(0).getTimelineChartDataList().get(currentRightTickIndex).getEnd();
-		HistogramSelectionChangeEvent event = new HistogramSelectionChangeEvent(this, beginning, end,
+		HistogramFilterChangeEvent event = new HistogramFilterChangeEvent(this, beginning, end,
 				currentLeftTickIndex, currentRightTickIndex);
-		for (HistogramSelectionChangeListener listener : selectionChangeListeners) {
+		for (HistogramFilterChangeListener listener : filterChangeListeners) {
 			listener.selectionChanged(event);
 		}
 	}
