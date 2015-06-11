@@ -2,7 +2,8 @@ package presenter.ui;
 
 import histogram.event.HistogramFilterChangeEvent;
 import histogram.event.HistogramFilterChangeListener;
-import histogram.grouper.Grouper.GroupingMethod;
+import histogram.event.HistogramSelectionChangeEvent;
+import histogram.event.HistogramSelectionChangeListener;
 import histogram.view.Histogram;
 
 import java.util.ArrayList;
@@ -24,13 +25,6 @@ public class HistogramPresenter extends Application {
 
 	@Override
 	public void start(Stage primaryStage) {
-		/*
-		 * TODO
-		 * 
-		 * - add grouping methods
-		 * - listeners on node selected
-		 * - multi node selection
-		 */
 		
 		try {
 			primaryStage.setTitle("Histogram test");
@@ -55,8 +49,15 @@ public class HistogramPresenter extends Application {
 
 			histogram.addFilterChangeListener(new HistogramFilterChangeListener() {
 				@Override
-				public void selectionChanged(HistogramFilterChangeEvent event) {
-					System.out.printf("Selection changed: %s - %s\n", event.getBeginning(), event.getEnd());
+				public void filterChanged(HistogramFilterChangeEvent event) {
+					System.out.printf("Filter changed: %s - %s\n", event.getBeginning(), event.getEnd());
+				}
+			});
+			
+			histogram.addSelectionChangeListener(new HistogramSelectionChangeListener() {
+				@Override
+				public void selectionChanged(HistogramSelectionChangeEvent event) {
+					System.out.printf("Selection changed: %d selected events\n", event.getSelectedEvents().size());
 				}
 			});
 

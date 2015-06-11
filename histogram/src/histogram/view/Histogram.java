@@ -2,6 +2,8 @@ package histogram.view;
 
 import histogram.event.HistogramFilterChangeEvent;
 import histogram.event.HistogramFilterChangeListener;
+import histogram.event.HistogramSelectionChangeEvent;
+import histogram.event.HistogramSelectionChangeListener;
 import histogram.grouper.Grouper;
 import histogram.grouper.Grouper.GroupingMethod;
 import histogram.selector.Selector;
@@ -64,6 +66,8 @@ public class Histogram extends Pane {
 
 	private final List<HistogramFilterChangeListener> filterChangeListeners;
 	
+	private final List<HistogramSelectionChangeListener> selectionChangeListeners;
+	
 	private final Map<Bounds, Pair<TimelineChartData, Node>> boundsToBars; //TODO should be replaced with sth more efficient 
 	
 	private final Set<TimelineChartData> selected;
@@ -82,6 +86,8 @@ public class Histogram extends Pane {
 		groupingMethod = defaultGroupingMethod;
 
 		filterChangeListeners = new LinkedList<>();
+		
+		selectionChangeListeners = new LinkedList<>();
 		
 		boundsToBars = new HashMap<>();
 		
@@ -104,6 +110,8 @@ public class Histogram extends Pane {
 		this.groupingMethod = groupingMethod;
 
 		filterChangeListeners = new LinkedList<>();
+		
+		selectionChangeListeners = new LinkedList<>();
 		
 		boundsToBars = new HashMap<>();
 		
@@ -300,7 +308,7 @@ public class Histogram extends Pane {
 			public void handle(MouseEvent event) {
 				boolean found = false;
 				for (Bounds bounds : boundsToBars.keySet()) {
-					if (bounds.contains(localToScene(event.getX() - yAxis.getWidth(), event.getY()))) {
+					if (bounds.contains(localToScene(event.getX(), event.getY()))) {
 						TimelineChartData data = boundsToBars.get(bounds).getKey();
 						found = true;
 						popupLabel.setText(String.format("%s\n%d events", data.getDescription(), data.getEventsCount()));
@@ -332,7 +340,9 @@ public class Histogram extends Pane {
 							node.setStyle(node.getStyle() + SELECTED_STYLE);
 							node.applyCss();
 						}
-						System.out.println(selected.size());
+						for (HistogramSelectionChangeListener listener : selectionChangeListeners) {
+							listener.selectionChanged(new HistogramSelectionChangeEvent(Histogram.this, selected));
+						}
 						break;
 					}
 				}
@@ -347,6 +357,14 @@ public class Histogram extends Pane {
 	public void removeFilterChangeListener(HistogramFilterChangeListener listener) {
 		filterChangeListeners.remove(listener);
 	}
+	
+	public void addSelectionChangeListener(HistogramSelectionChangeListener listener) {
+		selectionChangeListeners.add(listener);
+	}
+
+	public void removeSelectionChangeListener(HistogramSelectionChangeListener listener) {
+		selectionChangeListeners.remove(listener);
+	}
 
 	public void selectionChanged(int currentLeftTickIndex, int currentRightTickIndex) {
 		Date beginning = groupedCategories.get(0).getTimelineChartDataList().get(currentLeftTickIndex).getBeginning();
@@ -354,7 +372,7 @@ public class Histogram extends Pane {
 		HistogramFilterChangeEvent event = new HistogramFilterChangeEvent(this, beginning, end,
 				currentLeftTickIndex, currentRightTickIndex);
 		for (HistogramFilterChangeListener listener : filterChangeListeners) {
-			listener.selectionChanged(event);
+			listener.filterChanged(event);
 		}
 	}
 
