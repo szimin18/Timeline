@@ -37,7 +37,7 @@ public final class QuantityLeveler {
 				currentLevelValue += levelValueDelta;
 			}
 
-			System.out.println("-------------");
+			System.out.println("------------- Granulation unit selection -------------");
 			System.out.printf("Min input value: %d\n", minimumInputValue);
 			System.out.printf("Max input value: %d\n", maximumInputValue);
 			System.out.printf("Granulation unit: %d\n", granulationUnit);

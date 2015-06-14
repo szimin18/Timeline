@@ -6,6 +6,7 @@ import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
+import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -54,6 +55,12 @@ public class Selector extends Canvas {
 				drawFrame();
 			}
 		});
+		nodeForSelector.boundsInLocalProperty().addListener(new ChangeListener<Bounds>() {
+			@Override
+			public void changed(ObservableValue<? extends Bounds> observable, Bounds oldValue, Bounds newValue) {
+				drawFrame();
+			}
+		});
 	}
 	
 	private void drawFrame() {
@@ -64,7 +71,13 @@ public class Selector extends Canvas {
 		double textY = getHeight() / 2;
 		
 		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
-			graphicsContext.strokeText("AAA", startingX, textY);
+			graphicsContext.strokeText(dayOfWeek.getShortNameCapital(), startingX, textY);
+			startingX += getRadius() * ONE_NINTH;
+		}
+		startingX += getRadius() * 10 * ONE_NINTH;
+		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
+			graphicsContext.strokeText(dayOfWeek.getShortNameCapital(), startingX, textY);
+			startingX -= getRadius() * ONE_NINTH;
 		}
 	}
 

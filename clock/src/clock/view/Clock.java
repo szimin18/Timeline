@@ -1,6 +1,8 @@
 package clock.view;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -12,11 +14,15 @@ import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.PieChart.Data;
+import javafx.scene.control.Label;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.Lighting;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.Popup;
+import javafx.stage.PopupBuilder;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineChartData;
 import clock.grouper.Grouper;
@@ -26,6 +32,10 @@ import clock.grouper.QuantityLeveler.QuantityLevelProvider;
 import clock.selector.Selector;
 import clock.selector.Selector.ICanvasListener;
 import clock.util.DayOfWeek;
+
+import com.sun.glass.ui.Application;
+import com.sun.glass.ui.Robot;
+import com.sun.javafx.charts.Legend;
 
 public class Clock extends Pane {
 	private static final double ONE_NINTH = 1.0 / 9.0;
@@ -42,8 +52,39 @@ public class Clock extends Pane {
 	private final List<IClockSelectionListener> selectionListeners = new ArrayList<>();
 
 	private Clock(List<TimelineDataSet> timelineDataSets, Color chartBaseColor) {
+		final VBox vBox = new VBox();
+		getChildren().add(vBox);
+
+		final Label popupLabel = new Label();
+		popupLabel.setStyle("-fx-background-color: white;-fx-border-color: black");
+		final Popup popup = PopupBuilder.create().content(popupLabel).width(200).height(50).autoFix(true).build();
+
 		final StackPane stackPane = new StackPane();
-		getChildren().addAll(stackPane);
+		final PieChart legendChart = new PieChart();
+		final Legend legend = (Legend) legendChart.getChildrenUnmodifiable().get(2);
+		// vBox.getChildren().addAll(stackPane, legend);
+		vBox.getChildren().addAll(stackPane);
+
+		widthProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				double value = newValue.doubleValue();
+				stackPane.setMinWidth(value);
+				stackPane.setMaxWidth(value);
+				legend.setMinWidth(value);
+				legend.setMaxWidth(value);
+			}
+		});
+		heightProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				double halfValue = newValue.doubleValue();
+				stackPane.setMinHeight(halfValue);
+				stackPane.setMaxHeight(halfValue);
+				legend.setMinHeight(halfValue);
+				legend.setMaxHeight(halfValue);
+			}
+		});
 
 		final Map<DayOfWeek, Map<Integer, TimelineChartData>> groupedData = Grouper.group(timelineDataSets);
 
@@ -62,28 +103,6 @@ public class Clock extends Pane {
 			}
 		}
 
-		if (maximumEventsCount == 0) {
-			throw new AssertionError();
-		}
-
-		// final Set<Node> allNodes = new HashSet<>();
-		//
-		// stackPane.addEventHandler(MouseEvent.MOUSE_MOVED, new
-		// EventHandler<MouseEvent>() {
-		// @Override
-		// public void handle(MouseEvent event) {
-		// for (Node node : allNodes) {
-		// if (node.contains(event.getX() -
-		// stackPane.widthProperty().doubleValue() / 2, event.getY()
-		// - stackPane.heightProperty().doubleValue() / 2)) {
-		// node.setEffect(new Lighting());
-		// } else {
-		// node.setEffect(null);
-		// }
-		// }
-		// }
-		// });
-
 		double chartBaseHue = chartBaseColor.getHue();
 		double chartBaseSaturation = chartBaseColor.getSaturation() * 100;
 
@@ -101,7 +120,8 @@ public class Clock extends Pane {
 			allChartNodes.put(dayOfWeek, new HashMap<Integer, Node>(24));
 		}
 
-		PieChart chartForSelector = null;
+		List<QuantityLevel> allLevelsFroQuantity = new ArrayList<>();
+
 		Node nodeForSelector = null;
 
 		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
@@ -113,7 +133,7 @@ public class Clock extends Pane {
 
 			final double chartFactor = ONE_NINTH * chartSizeIndex;
 
-			widthProperty().addListener(new ChangeListener<Number>() {
+			stackPane.widthProperty().addListener(new ChangeListener<Number>() {
 				@Override
 				public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 					double value = newValue.doubleValue();
@@ -122,7 +142,7 @@ public class Clock extends Pane {
 				}
 			});
 
-			heightProperty().addListener(new ChangeListener<Number>() {
+			stackPane.heightProperty().addListener(new ChangeListener<Number>() {
 				@Override
 				public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 					double value = newValue.doubleValue();
@@ -134,13 +154,14 @@ public class Clock extends Pane {
 			ObservableList<Data> chartData = chart.getData();
 			for (int hour = 6;; hour++) {
 				if (hour == 24) {
-					hour -= 24;
+					hour = 0;
 				}
 
 				Data data = new Data(null, 1);
 				chartData.add(data);
 				QuantityLevel levelForQuantity = quantityLevelProvider.getLevelForQuantity(groupedData.get(dayOfWeek)
 						.get(hour).getEventsCount());
+				allLevelsFroQuantity.add(levelForQuantity);
 				String format = String.format(Locale.ENGLISH, pieColorStyleTemplate, levelForQuantity.getLevelValue());
 				System.out.println(format);
 				final Node node = data.getNode();
@@ -148,11 +169,7 @@ public class Clock extends Pane {
 
 				if (dayOfWeek == DayOfWeek.MONDAY && hour == 23) {
 					nodeForSelector = node;
-					chartForSelector = chart;
 				}
-
-				// Tooltip.install(node, new
-				// Tooltip(timelineChartData.getDescription()));
 
 				allChartNodes.get(dayOfWeek).put(hour, node);
 
@@ -171,7 +188,7 @@ public class Clock extends Pane {
 
 		final double chartFactor = ONE_NINTH * chartSizeIndex;
 
-		widthProperty().addListener(new ChangeListener<Number>() {
+		stackPane.widthProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
@@ -180,7 +197,7 @@ public class Clock extends Pane {
 			}
 		});
 
-		heightProperty().addListener(new ChangeListener<Number>() {
+		stackPane.heightProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
@@ -189,31 +206,48 @@ public class Clock extends Pane {
 			}
 		});
 
-		Data data = new Data(null, 1);
-		whiteChart.getData().add(data);
-		data.getNode().setStyle("-fx-background-color: rgb(255, 255, 255); -fx-border-color: rgb(255, 255, 255);");
+		Data whiteChartData = new Data(null, 1);
+		whiteChart.getData().add(whiteChartData);
+		whiteChartData.getNode().setStyle(
+				"-fx-background-color: rgb(255, 255, 255); -fx-border-color: rgb(255, 255, 255);");
 
 		final Selector selector = new Selector(nodeForSelector);
 		stackPane.getChildren().add(selector);
 
-		chartForSelector.widthProperty().addListener(new ChangeListener<Number>() {
+		stackPane.widthProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				selector.setWidth(newValue.doubleValue());
 			}
 		});
-		chartForSelector.heightProperty().addListener(new ChangeListener<Number>() {
+		stackPane.heightProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				selector.setHeight(newValue.doubleValue());
+				double doubleValue = newValue.doubleValue();
+				selector.setHeight(doubleValue);
 			}
 		});
+
+		Collections.sort(allLevelsFroQuantity, new Comparator<QuantityLevel>() {
+			@Override
+			public int compare(QuantityLevel level1, QuantityLevel level2) {
+				return Double.compare(level1.getLevelValue(), level2.getLevelValue());
+			}
+		});
+
+		for (QuantityLevel quantityLevel : allLevelsFroQuantity) {
+			Data data = new Data(quantityLevel.getLevelDescription(), 1);
+			legendChart.getData().add(data);
+			String format = String.format(Locale.ENGLISH, pieColorStyleTemplate, quantityLevel.getLevelValue());
+			data.getNode().setStyle(format);
+		}
 
 		selector.addCanvasListener(new ICanvasListener() {
 			@Override
 			public void hoverRemoved() {
 				if (hoveredNode != null && hoveredNode != selectedNode) {
 					hoveredNode.setEffect(null);
+					popup.hide();
 				}
 			}
 
@@ -224,6 +258,11 @@ public class Clock extends Pane {
 					hoverRemoved();
 					hoveredNode = newHoveredNode;
 					hoveredNode.setEffect(LIGHTNING_EFFECT);
+					popupLabel.setText(groupedData.get(dayOfWeek).get(hour).getDescription());
+					Robot robot = Application.GetApplication().createRobot();
+					popup.setX(robot.getMouseX());
+					popup.setY(robot.getMouseY());
+					popup.show(Clock.this.getScene().getWindow());
 				}
 			}
 

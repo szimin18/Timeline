@@ -312,8 +312,8 @@ public class Histogram extends Pane {
 						TimelineChartData data = boundsToBars.get(bounds).getKey();
 						found = true;
 						popupLabel.setText(String.format("%s\n%d events", data.getDescription(), data.getEventsCount()));
-						popup.setAnchorX(event.getScreenX()+ 20);
-						popup.setAnchorY(event.getScreenY() + 20);
+						popup.setX(event.getScreenX()+ 20);
+						popup.setY(event.getScreenY() + 20);
 						popup.show(Histogram.this.getScene().getWindow());
 						break;
 					}
@@ -334,11 +334,11 @@ public class Histogram extends Pane {
 						if (selected.contains(data)) {
 							selected.remove(data);
 							node.setStyle(node.getStyle().split(";")[0] + ";");
-							node.applyCss();
+//							node.applyCss();
 						} else {
 							selected.add(data);
 							node.setStyle(node.getStyle() + SELECTED_STYLE);
-							node.applyCss();
+//							node.applyCss();
 						}
 						for (HistogramSelectionChangeListener listener : selectionChangeListeners) {
 							listener.selectionChanged(new HistogramSelectionChangeEvent(Histogram.this, selected));
