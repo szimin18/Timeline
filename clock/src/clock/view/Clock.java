@@ -25,6 +25,7 @@ import javafx.stage.Popup;
 import javafx.stage.PopupBuilder;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineChartData;
+import clock.graphic.ClockChart;
 import clock.grouper.Grouper;
 import clock.grouper.QuantityLeveler;
 import clock.grouper.QuantityLeveler.QuantityLevel;
@@ -39,9 +40,16 @@ import com.sun.javafx.charts.Legend;
 
 public class Clock extends Pane {
 	private static final double ONE_NINTH = 1.0 / 9.0;
-	private static final Color DEFAULT_CHART_BASE_COLOR = Color.GOLD;
-	private static final double CHART_MINIMUM_BRIGHTNESS = 20.0;
-	private static final double CHART_MAXIMUM_BRIGHTNESS = 100.0;
+
+	private static final Color DEFAULT_CHART_BASE_COLOR = Color.AQUA;
+
+	private static final Color DEFAULT_CHART_HIGHLIGHTED_COLOR = Color.GREEN;
+
+	private static final Color DEFAULT_CHART_SELECTED_COLOR = Color.CHOCOLATE;
+
+	private static final double CHART_MINIMUM_BRIGHTNESS = 0.2;
+
+	private static final double CHART_MAXIMUM_BRIGHTNESS = 1.0;
 
 	private static final Effect LIGHTNING_EFFECT = new Lighting();
 
@@ -51,9 +59,34 @@ public class Clock extends Pane {
 
 	private final List<IClockSelectionListener> selectionListeners = new ArrayList<>();
 
-	private Clock(List<TimelineDataSet> timelineDataSets, Color chartBaseColor) {
+	private Clock(List<TimelineDataSet> timelineDataSets, Color chartBaseColor, Color chartHighlightedColor,
+			Color chartSelectedColor) {
+		final Map<DayOfWeek, Map<Integer, TimelineChartData>> groupedData = Grouper.group(timelineDataSets);
+
+		int minimumEventsCount = Integer.MAX_VALUE;
+		int maximumEventsCount = 0;
+
+		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
+			for (int hour = 0; hour < 24; hour++) {
+				int eventsCount = groupedData.get(dayOfWeek).get(hour).getEventsCount();
+				if (eventsCount < minimumEventsCount) {
+					minimumEventsCount = eventsCount;
+				}
+				if (eventsCount > maximumEventsCount) {
+					maximumEventsCount = eventsCount;
+				}
+			}
+		}
+
+		QuantityLevelProvider quantityLevelProvider = QuantityLeveler.getQuantityLevelProvider(
+				CHART_MAXIMUM_BRIGHTNESS, CHART_MINIMUM_BRIGHTNESS, minimumEventsCount, maximumEventsCount);
+
 		final VBox vBox = new VBox();
-		getChildren().add(vBox);
+		final ClockChart clockChart = new ClockChart(groupedData, quantityLevelProvider, chartBaseColor.getHue(),
+				chartBaseColor.getSaturation(), chartHighlightedColor.getHue(), chartHighlightedColor.getSaturation(),
+				chartSelectedColor.getHue(), chartSelectedColor.getSaturation());
+
+		getChildren().add(clockChart);
 
 		final Label popupLabel = new Label();
 		popupLabel.setStyle("-fx-background-color: white;-fx-border-color: black");
@@ -73,45 +106,24 @@ public class Clock extends Pane {
 				stackPane.setMaxWidth(value);
 				legend.setMinWidth(value);
 				legend.setMaxWidth(value);
+				clockChart.setWidth(value);
 			}
 		});
 		heightProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				double halfValue = newValue.doubleValue();
-				stackPane.setMinHeight(halfValue);
-				stackPane.setMaxHeight(halfValue);
-				legend.setMinHeight(halfValue);
-				legend.setMaxHeight(halfValue);
+				double value = newValue.doubleValue();
+				stackPane.setMinHeight(value);
+				stackPane.setMaxHeight(value);
+				legend.setMinHeight(value);
+				legend.setMaxHeight(value);
+				clockChart.setHeight(value);
 			}
 		});
 
-		final Map<DayOfWeek, Map<Integer, TimelineChartData>> groupedData = Grouper.group(timelineDataSets);
-
-		int minimumEventsCount = Integer.MAX_VALUE;
-		int maximumEventsCount = 0;
-
-		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
-			for (int hour = 0; hour < 24; hour++) {
-				int eventsCount = groupedData.get(dayOfWeek).get(hour).getEventsCount();
-				if (eventsCount < minimumEventsCount) {
-					minimumEventsCount = eventsCount;
-				}
-				if (eventsCount > maximumEventsCount) {
-					maximumEventsCount = eventsCount;
-				}
-			}
-		}
-
-		double chartBaseHue = chartBaseColor.getHue();
-		double chartBaseSaturation = chartBaseColor.getSaturation() * 100;
-
 		String pieColorStyleTemplate = String.format(Locale.ENGLISH,
 				"-fx-pie-color: hsb(%f, %f%%%%, %%f%%%%); -fx-border-color: derive(-fx-pie-color, -40%%%%);",
-				chartBaseHue, chartBaseSaturation);
-
-		QuantityLevelProvider quantityLevelProvider = QuantityLeveler.getQuantityLevelProvider(
-				CHART_MAXIMUM_BRIGHTNESS, CHART_MINIMUM_BRIGHTNESS, minimumEventsCount, maximumEventsCount);
+				chartBaseColor.getHue(), chartBaseColor.getSaturation());
 
 		int chartSizeIndex = 9;
 
@@ -288,11 +300,13 @@ public class Clock extends Pane {
 	}
 
 	public static Clock newInstance(List<TimelineDataSet> timelineDataSets) {
-		return new Clock(timelineDataSets, DEFAULT_CHART_BASE_COLOR);
+		return new Clock(timelineDataSets, DEFAULT_CHART_BASE_COLOR, DEFAULT_CHART_HIGHLIGHTED_COLOR,
+				DEFAULT_CHART_SELECTED_COLOR);
 	}
 
-	public static Clock newInstance(List<TimelineDataSet> timelineDataSets, Color chartBaseColor) {
-		return new Clock(timelineDataSets, chartBaseColor);
+	public static Clock newInstance(List<TimelineDataSet> timelineDataSets, Color chartBaseColor,
+			Color chartHighlightedColor, Color chartSelectedColor) {
+		return new Clock(timelineDataSets, chartBaseColor, chartHighlightedColor, chartSelectedColor);
 	}
 
 	private void notifySelectionRemoved() {
