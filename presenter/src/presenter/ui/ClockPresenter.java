@@ -9,9 +9,10 @@ import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import model.dataset.TimelineDataSet;
+import model.event.TimelineEvent;
 import presenter.generator.RandomDataGenerator;
-import clock.util.DayOfWeek;
 import clock.view.Clock;
+import clock.view.Clock.ClockSelectionEvent;
 import clock.view.Clock.IClockSelectionListener;
 
 public class ClockPresenter extends Application {
@@ -40,16 +41,20 @@ public class ClockPresenter extends Application {
 					currentTimeMillis), 100, Color.RED));
 
 			Clock clock = Clock.newInstance(timelineDataSets);
-			
+
 			clock.addSelectionListener(new IClockSelectionListener() {
 				@Override
-				public void selectionRemoved() {
-					System.out.println("Selection removed");
-				}
-				
-				@Override
-				public void selectionChanged(DayOfWeek dayOfWeek, String hourDescription) {
-					System.out.println("Selection changed: " + dayOfWeek + ", hour: " + hourDescription);
+				public void selectionChanged(ClockSelectionEvent event) {
+					System.out.println("Selection changed ------------------");
+					System.out.println("Selected events count: " + event.getSelectedEventsCount());
+					int i = 20;
+					for (TimelineEvent timelineEvent : event.getSelectedEvents()) {
+						System.out.printf("%s # %s\n", timelineEvent.getTid(), timelineEvent.getDate().toString());
+
+						if (--i <= 0) {
+							break;
+						}
+					}
 				}
 			});
 

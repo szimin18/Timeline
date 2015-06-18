@@ -3,44 +3,38 @@ package clock.view;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.ObservableList;
-import javafx.scene.Node;
-import javafx.scene.chart.PieChart;
-import javafx.scene.chart.PieChart.Data;
-import javafx.scene.control.Label;
-import javafx.scene.effect.Effect;
-import javafx.scene.effect.Lighting;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.stage.Popup;
-import javafx.stage.PopupBuilder;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineChartData;
-import clock.graphic.ClockChart;
+import model.event.TimelineEvent;
+import clock.chart.ClockChart;
+import clock.chart.ClockChart.ClockChartSelectionEvent;
+import clock.chart.ClockChart.ClockChartSliceDescriptor;
+import clock.chart.ClockChart.IClockChartListener;
 import clock.grouper.Grouper;
 import clock.grouper.QuantityLeveler;
 import clock.grouper.QuantityLeveler.QuantityLevel;
 import clock.grouper.QuantityLeveler.QuantityLevelProvider;
-import clock.selector.Selector;
-import clock.selector.Selector.ICanvasListener;
+import clock.legend.HorizontalLegend;
+import clock.legend.Legend.LegendEntry;
 import clock.util.DayOfWeek;
 
-import com.sun.glass.ui.Application;
-import com.sun.glass.ui.Robot;
-import com.sun.javafx.charts.Legend;
+/*
+ * TODO
+ * 
+ * - legend
+ * - labels max size
+ * 
+ */
 
 public class Clock extends Pane {
-	private static final double ONE_NINTH = 1.0 / 9.0;
-
 	private static final Color DEFAULT_CHART_BASE_COLOR = Color.AQUA;
 
 	private static final Color DEFAULT_CHART_HIGHLIGHTED_COLOR = Color.GREEN;
@@ -51,17 +45,15 @@ public class Clock extends Pane {
 
 	private static final double CHART_MAXIMUM_BRIGHTNESS = 1.0;
 
-	private static final Effect LIGHTNING_EFFECT = new Lighting();
-
-	private Node hoveredNode = null;
-
-	private Node selectedNode = null;
-
 	private final List<IClockSelectionListener> selectionListeners = new ArrayList<>();
+
+	private Map<DayOfWeek, Map<Integer, TimelineChartData>> groupedData;
 
 	private Clock(List<TimelineDataSet> timelineDataSets, Color chartBaseColor, Color chartHighlightedColor,
 			Color chartSelectedColor) {
-		final Map<DayOfWeek, Map<Integer, TimelineChartData>> groupedData = Grouper.group(timelineDataSets);
+
+		// clockChart
+		groupedData = Grouper.group(timelineDataSets);
 
 		int minimumEventsCount = Integer.MAX_VALUE;
 		int maximumEventsCount = 0;
@@ -81,31 +73,16 @@ public class Clock extends Pane {
 		QuantityLevelProvider quantityLevelProvider = QuantityLeveler.getQuantityLevelProvider(
 				CHART_MAXIMUM_BRIGHTNESS, CHART_MINIMUM_BRIGHTNESS, minimumEventsCount, maximumEventsCount);
 
-		final VBox vBox = new VBox();
 		final ClockChart clockChart = new ClockChart(groupedData, quantityLevelProvider, chartBaseColor.getHue(),
 				chartBaseColor.getSaturation(), chartHighlightedColor.getHue(), chartHighlightedColor.getSaturation(),
 				chartSelectedColor.getHue(), chartSelectedColor.getSaturation());
 
 		getChildren().add(clockChart);
 
-		final Label popupLabel = new Label();
-		popupLabel.setStyle("-fx-background-color: white;-fx-border-color: black");
-		final Popup popup = PopupBuilder.create().content(popupLabel).width(200).height(50).autoFix(true).build();
-
-		final StackPane stackPane = new StackPane();
-		final PieChart legendChart = new PieChart();
-		final Legend legend = (Legend) legendChart.getChildrenUnmodifiable().get(2);
-		// vBox.getChildren().addAll(stackPane, legend);
-		vBox.getChildren().addAll(stackPane);
-
 		widthProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
-				stackPane.setMinWidth(value);
-				stackPane.setMaxWidth(value);
-				legend.setMinWidth(value);
-				legend.setMaxWidth(value);
 				clockChart.setWidth(value);
 			}
 		});
@@ -113,190 +90,55 @@ public class Clock extends Pane {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
-				stackPane.setMinHeight(value);
-				stackPane.setMaxHeight(value);
-				legend.setMinHeight(value);
-				legend.setMaxHeight(value);
 				clockChart.setHeight(value);
 			}
 		});
 
-		String pieColorStyleTemplate = String.format(Locale.ENGLISH,
-				"-fx-pie-color: hsb(%f, %f%%%%, %%f%%%%); -fx-border-color: derive(-fx-pie-color, -40%%%%);",
-				chartBaseColor.getHue(), chartBaseColor.getSaturation());
+		clockChart.addClockChartListener(new IClockChartListener() {
+			@Override
+			public void selectionChanged(ClockChartSelectionEvent chartEvent) {
+				ClockSelectionEvent event = new ClockSelectionEvent(chartEvent);
 
-		int chartSizeIndex = 9;
+				for (IClockSelectionListener listener : selectionListeners) {
+					listener.selectionChanged(event);
+				}
+			}
+		});
 
-		final Map<DayOfWeek, Map<Integer, Node>> allChartNodes = new HashMap<>(DayOfWeek.VALUES_LIST.size());
+		// legend
+
+		List<QuantityLevel> allQuantityLevels = new ArrayList<>();
+
 		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
-			allChartNodes.put(dayOfWeek, new HashMap<Integer, Node>(24));
+			for (int hour = 0; hour < 24; hour++) {
+				allQuantityLevels.add(quantityLevelProvider.getLevelForQuantity(groupedData.get(dayOfWeek).get(hour)
+						.getEventsCount()));
+			}
 		}
 
-		List<QuantityLevel> allLevelsFroQuantity = new ArrayList<>();
-
-		Node nodeForSelector = null;
-
-		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
-			final PieChart chart = new PieChart();
-			stackPane.getChildren().add(chart);
-
-			chart.setLabelsVisible(false);
-			chart.setLegendVisible(false);
-
-			final double chartFactor = ONE_NINTH * chartSizeIndex;
-
-			stackPane.widthProperty().addListener(new ChangeListener<Number>() {
-				@Override
-				public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-					double value = newValue.doubleValue();
-					chart.setMinWidth(value * chartFactor);
-					chart.setMaxWidth(value * chartFactor);
-				}
-			});
-
-			stackPane.heightProperty().addListener(new ChangeListener<Number>() {
-				@Override
-				public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-					double value = newValue.doubleValue();
-					chart.setMinHeight(value * chartFactor);
-					chart.setMaxHeight(value * chartFactor);
-				}
-			});
-
-			ObservableList<Data> chartData = chart.getData();
-			for (int hour = 6;; hour++) {
-				if (hour == 24) {
-					hour = 0;
-				}
-
-				Data data = new Data(null, 1);
-				chartData.add(data);
-				QuantityLevel levelForQuantity = quantityLevelProvider.getLevelForQuantity(groupedData.get(dayOfWeek)
-						.get(hour).getEventsCount());
-				allLevelsFroQuantity.add(levelForQuantity);
-				String format = String.format(Locale.ENGLISH, pieColorStyleTemplate, levelForQuantity.getLevelValue());
-				System.out.println(format);
-				final Node node = data.getNode();
-				node.setStyle(format);
-
-				if (dayOfWeek == DayOfWeek.MONDAY && hour == 23) {
-					nodeForSelector = node;
-				}
-
-				allChartNodes.get(dayOfWeek).put(hour, node);
-
-				if (hour == 5) {
-					break;
-				}
-			}
-			chartSizeIndex--;
-		}
-
-		final PieChart whiteChart = new PieChart();
-		stackPane.getChildren().add(whiteChart);
-
-		whiteChart.setLabelsVisible(false);
-		whiteChart.setLegendVisible(false);
-
-		final double chartFactor = ONE_NINTH * chartSizeIndex;
-
-		stackPane.widthProperty().addListener(new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				double value = newValue.doubleValue();
-				whiteChart.setMinWidth(value * chartFactor);
-				whiteChart.setMaxWidth(value * chartFactor);
-			}
-		});
-
-		stackPane.heightProperty().addListener(new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				double value = newValue.doubleValue();
-				whiteChart.setMinHeight(value * chartFactor);
-				whiteChart.setMaxHeight(value * chartFactor);
-			}
-		});
-
-		Data whiteChartData = new Data(null, 1);
-		whiteChart.getData().add(whiteChartData);
-		whiteChartData.getNode().setStyle(
-				"-fx-background-color: rgb(255, 255, 255); -fx-border-color: rgb(255, 255, 255);");
-
-		final Selector selector = new Selector(nodeForSelector);
-		stackPane.getChildren().add(selector);
-
-		stackPane.widthProperty().addListener(new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				selector.setWidth(newValue.doubleValue());
-			}
-		});
-		stackPane.heightProperty().addListener(new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				double doubleValue = newValue.doubleValue();
-				selector.setHeight(doubleValue);
-			}
-		});
-
-		Collections.sort(allLevelsFroQuantity, new Comparator<QuantityLevel>() {
+		Collections.sort(allQuantityLevels, new Comparator<QuantityLevel>() {
 			@Override
 			public int compare(QuantityLevel level1, QuantityLevel level2) {
 				return Double.compare(level1.getLevelValue(), level2.getLevelValue());
 			}
 		});
 
-		for (QuantityLevel quantityLevel : allLevelsFroQuantity) {
-			Data data = new Data(quantityLevel.getLevelDescription(), 1);
-			legendChart.getData().add(data);
-			String format = String.format(Locale.ENGLISH, pieColorStyleTemplate, quantityLevel.getLevelValue());
-			data.getNode().setStyle(format);
+		double chartBaseHue = chartBaseColor.getHue();
+		double chartBaseSaturation = chartBaseColor.getSaturation();
+
+		List<LegendEntry> legendEntries = new ArrayList<>();
+
+		for (QuantityLevel quantityLevel : allQuantityLevels) {
+			legendEntries.add(new LegendEntry(quantityLevel.getLevelDescription(), Color.hsb(chartBaseHue,
+					chartBaseSaturation, quantityLevel.getLevelValue())));
 		}
 
-		selector.addCanvasListener(new ICanvasListener() {
-			@Override
-			public void hoverRemoved() {
-				if (hoveredNode != null && hoveredNode != selectedNode) {
-					hoveredNode.setEffect(null);
-					popup.hide();
-				}
-			}
+		HorizontalLegend horizontalLegend = new HorizontalLegend(legendEntries, clockChart.fontSizeProperty());
+		
+		getChildren().add(horizontalLegend);
 
-			@Override
-			public void hoverChanged(DayOfWeek dayOfWeek, int hour) {
-				Node newHoveredNode = allChartNodes.get(dayOfWeek).get(hour);
-				if (newHoveredNode != hoveredNode) {
-					hoverRemoved();
-					hoveredNode = newHoveredNode;
-					hoveredNode.setEffect(LIGHTNING_EFFECT);
-					popupLabel.setText(groupedData.get(dayOfWeek).get(hour).getDescription());
-					Robot robot = Application.GetApplication().createRobot();
-					popup.setX(robot.getMouseX());
-					popup.setY(robot.getMouseY());
-					popup.show(Clock.this.getScene().getWindow());
-				}
-			}
+		// management
 
-			@Override
-			public void selectionRemoved() {
-				if (selectedNode != null && selectedNode != hoveredNode) {
-					selectedNode.setEffect(null);
-				}
-				notifySelectionRemoved();
-			}
-
-			@Override
-			public void selectionChanged(DayOfWeek dayOfWeek, int hour) {
-				Node newSelectedNode = allChartNodes.get(dayOfWeek).get(hour);
-				if (newSelectedNode != selectedNode) {
-					selectionRemoved();
-					selectedNode = newSelectedNode;
-					selectedNode.setEffect(LIGHTNING_EFFECT);
-				}
-				notifySelectionChanged(dayOfWeek, groupedData.get(dayOfWeek).get(hour).getDescription());
-			}
-		});
 	}
 
 	public static Clock newInstance(List<TimelineDataSet> timelineDataSets) {
@@ -309,18 +151,6 @@ public class Clock extends Pane {
 		return new Clock(timelineDataSets, chartBaseColor, chartHighlightedColor, chartSelectedColor);
 	}
 
-	private void notifySelectionRemoved() {
-		for (IClockSelectionListener listener : selectionListeners) {
-			listener.selectionRemoved();
-		}
-	}
-
-	private void notifySelectionChanged(DayOfWeek dayOfWeek, String hourDescription) {
-		for (IClockSelectionListener listener : selectionListeners) {
-			listener.selectionChanged(dayOfWeek, hourDescription);
-		}
-	}
-
 	public void addSelectionListener(IClockSelectionListener listener) {
 		selectionListeners.add(listener);
 	}
@@ -330,8 +160,83 @@ public class Clock extends Pane {
 	}
 
 	public static interface IClockSelectionListener {
-		public void selectionRemoved();
+		public void selectionChanged(ClockSelectionEvent event);
+	}
 
-		public void selectionChanged(DayOfWeek dayOfWeek, String hourDescription);
+	public class ClockSelectionEvent {
+		private List<ClockChartSliceDescriptor> selectedSlices;
+
+		private ClockSelectionEvent(ClockChartSelectionEvent clockChartSelectionEvent) {
+			selectedSlices = clockChartSelectionEvent.getSelectedSlices();
+		}
+
+		public Iterable<TimelineEvent> getSelectedEvents() {
+			return new ClockEventsIterable(selectedSlices);
+		}
+
+		public boolean isSliceSelected(DayOfWeek dayOfWeek, int hour) {
+			for (ClockChartSliceDescriptor sliceDescriptor : selectedSlices) {
+				if (dayOfWeek == sliceDescriptor.getDayOfWeek() && hour == sliceDescriptor.getHour()) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		public int getSelectedEventsCount() {
+			int selectedEventsCount = 0;
+
+			for (ClockChartSliceDescriptor sliceDescriptor : selectedSlices) {
+				selectedEventsCount += groupedData.get(sliceDescriptor.getDayOfWeek()).get(sliceDescriptor.getHour())
+						.getEventsCount();
+			}
+
+			return selectedEventsCount;
+		}
+	}
+
+	private class ClockEventsIterable implements Iterable<TimelineEvent> {
+		private List<ClockChartSliceDescriptor> selectedSlices;
+
+		private ClockEventsIterable(List<ClockChartSliceDescriptor> selectedSlices) {
+			this.selectedSlices = selectedSlices;
+		}
+
+		@Override
+		public Iterator<TimelineEvent> iterator() {
+			return new Iterator<TimelineEvent>() {
+				private final Iterator<ClockChartSliceDescriptor> outerIterator = selectedSlices.iterator();
+
+				private Iterator<TimelineEvent> innerIterator = Collections.emptyIterator();
+
+				@Override
+				public void remove() {
+				}
+
+				@Override
+				public TimelineEvent next() {
+					swapIterators();
+
+					return innerIterator.next();
+				}
+
+				@Override
+				public boolean hasNext() {
+					swapIterators();
+
+					return innerIterator.hasNext();
+				}
+
+				private void swapIterators() {
+					while (!innerIterator.hasNext() && outerIterator.hasNext()) {
+						ClockChartSliceDescriptor nextSliceDescriptor = outerIterator.next();
+
+						innerIterator = groupedData.get(nextSliceDescriptor.getDayOfWeek())
+								.get(nextSliceDescriptor.getHour()).getEventsList().iterator();
+					}
+				}
+			};
+		}
+
 	}
 }

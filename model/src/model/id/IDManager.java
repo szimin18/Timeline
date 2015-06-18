@@ -29,5 +29,10 @@ public final class IDManager {
 		public final long getID() {
 			return ID;
 		}
+		
+		@Override
+		public String toString() {
+			return String.valueOf(ID);
+		}
 	}
 }
