@@ -2,6 +2,10 @@ package clock.legend;
 
 import java.util.List;
 
+import com.sun.javafx.tk.FontLoader;
+import com.sun.javafx.tk.FontMetrics;
+import com.sun.javafx.tk.Toolkit;
+
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -11,7 +15,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
 public abstract class Legend extends Canvas {
-	protected final List<LegendEntry> legendEntries;
+	private static final FontLoader FONT_LOADER = Toolkit.getToolkit().getFontLoader();
+
+	private final List<LegendEntry> legendEntries;
 
 	private ReadOnlyDoubleProperty fontSizeProperty;
 
@@ -33,8 +39,16 @@ public abstract class Legend extends Canvas {
 		fontSizeProperty.addListener(drawFrameListener);
 	}
 
+	protected List<LegendEntry> getLegendEntries() {
+		return legendEntries;
+	}
+
 	protected Font getFont() {
 		return new Font(fontSizeProperty.get());
+	}
+
+	protected FontMetrics getFontMetrics() {
+		return FONT_LOADER.getFontMetrics(getFont());
 	}
 
 	protected abstract void drawFrame(GraphicsContext graphicsContext);

@@ -6,10 +6,12 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineChartData;
@@ -29,7 +31,8 @@ import clock.util.DayOfWeek;
 /*
  * TODO
  * 
- * - legend
+ * - add vertical legend with switch
+ * - enhance all sizes
  * - labels max size
  * 
  */
@@ -52,7 +55,10 @@ public class Clock extends Pane {
 	private Clock(List<TimelineDataSet> timelineDataSets, Color chartBaseColor, Color chartHighlightedColor,
 			Color chartSelectedColor) {
 
+		final VBox vBox = new VBox();
+
 		// clockChart
+
 		groupedData = Grouper.group(timelineDataSets);
 
 		int minimumEventsCount = Integer.MAX_VALUE;
@@ -77,22 +83,7 @@ public class Clock extends Pane {
 				chartBaseColor.getSaturation(), chartHighlightedColor.getHue(), chartHighlightedColor.getSaturation(),
 				chartSelectedColor.getHue(), chartSelectedColor.getSaturation());
 
-		getChildren().add(clockChart);
-
-		widthProperty().addListener(new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				double value = newValue.doubleValue();
-				clockChart.setWidth(value);
-			}
-		});
-		heightProperty().addListener(new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				double value = newValue.doubleValue();
-				clockChart.setHeight(value);
-			}
-		});
+		vBox.getChildren().add(clockChart);
 
 		clockChart.addClockChartListener(new IClockChartListener() {
 			@Override
@@ -107,7 +98,12 @@ public class Clock extends Pane {
 
 		// legend
 
-		List<QuantityLevel> allQuantityLevels = new ArrayList<>();
+		TreeSet<QuantityLevel> allQuantityLevels = new TreeSet<>(new Comparator<QuantityLevel>() {
+			@Override
+			public int compare(QuantityLevel level1, QuantityLevel level2) {
+				return Double.compare(level2.getLevelValue(), level1.getLevelValue());
+			}
+		});
 
 		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
 			for (int hour = 0; hour < 24; hour++) {
@@ -115,13 +111,6 @@ public class Clock extends Pane {
 						.getEventsCount()));
 			}
 		}
-
-		Collections.sort(allQuantityLevels, new Comparator<QuantityLevel>() {
-			@Override
-			public int compare(QuantityLevel level1, QuantityLevel level2) {
-				return Double.compare(level1.getLevelValue(), level2.getLevelValue());
-			}
-		});
 
 		double chartBaseHue = chartBaseColor.getHue();
 		double chartBaseSaturation = chartBaseColor.getSaturation();
@@ -133,12 +122,49 @@ public class Clock extends Pane {
 					chartBaseSaturation, quantityLevel.getLevelValue())));
 		}
 
-		HorizontalLegend horizontalLegend = new HorizontalLegend(legendEntries, clockChart.fontSizeProperty());
-		
-		getChildren().add(horizontalLegend);
+		final HorizontalLegend horizontalLegend = new HorizontalLegend(legendEntries, clockChart.fontSizeProperty());
+
+		vBox.getChildren().add(horizontalLegend);
 
 		// management
 
+		getChildren().add(vBox);
+
+		vBox.widthProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				double value = newValue.doubleValue();
+				clockChart.setWidth(value);
+				horizontalLegend.setWidth(value);
+			}
+		});
+
+		vBox.heightProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				double value = newValue.doubleValue();
+				clockChart.setHeight(value * 6 / 7);
+				horizontalLegend.setHeight(value / 7);
+			}
+		});
+
+		widthProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				double value = newValue.doubleValue();
+				vBox.setMinWidth(value);
+				vBox.setMaxWidth(value);
+			}
+		});
+
+		heightProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				double value = newValue.doubleValue();
+				vBox.setMinHeight(value);
+				vBox.setMaxHeight(value);
+			}
+		});
 	}
 
 	public static Clock newInstance(List<TimelineDataSet> timelineDataSets) {

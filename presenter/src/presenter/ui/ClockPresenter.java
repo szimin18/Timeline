@@ -26,19 +26,21 @@ public class ClockPresenter extends Application {
 		try {
 			primaryStage.setTitle("Clock test");
 
+			int eventsPerDataset = 1000;
+
 			long currentTimeMillis = System.currentTimeMillis();
 			long timeRange = yearsInMiliseconds(1);
 			List<TimelineDataSet> timelineDataSets = new ArrayList<TimelineDataSet>();
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), 100, Color.GOLD));
+					currentTimeMillis), eventsPerDataset, Color.GOLD));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), 100, Color.GREEN));
+					currentTimeMillis), eventsPerDataset, Color.GREEN));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), 100, Color.GREEN));
+					currentTimeMillis), eventsPerDataset, Color.GREEN));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), 100, Color.BLUE));
+					currentTimeMillis), eventsPerDataset, Color.BLUE));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), 100, Color.RED));
+					currentTimeMillis), eventsPerDataset, Color.RED));
 
 			Clock clock = Clock.newInstance(timelineDataSets);
 
