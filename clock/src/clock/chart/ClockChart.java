@@ -35,7 +35,7 @@ import com.sun.javafx.tk.Toolkit;
 public class ClockChart extends Canvas {
 	private static final double SLICE_RADIUS_RATIO = 1.0 / 9.0;
 
-	private static final double SIDES_MARGIN = 50.0;
+	private static final double SIDES_MARGIN = 90.0;
 
 	private static final double CURSOR_WIDTH = 15.0;
 
@@ -69,6 +69,8 @@ public class ClockChart extends Canvas {
 			OFFSET_COSINE_FOR_HOUR.put(hour, Math.cos(radiansWithOffset));
 		}
 	}
+
+	private static final double MAX_FONT_SIZE = 16.0;
 
 	private static final double FONT_SIZE_DELTA = 1.0;
 
@@ -288,8 +290,9 @@ public class ClockChart extends Canvas {
 		double targetSize = chartRadius * SLICE_RADIUS_RATIO * FONT_WIDTH_IN_SLICE_RATIO;
 
 		if (resizedToBigger) {
-			while (FONT_LOADER.computeStringWidth(LONGEST_DAY_OF_WEEK_NAME, new Font(fontSizeProperty.get()
-					+ FONT_SIZE_DELTA)) <= targetSize) {
+			while (fontSizeProperty.get() + FONT_SIZE_DELTA <= MAX_FONT_SIZE
+					&& FONT_LOADER.computeStringWidth(LONGEST_DAY_OF_WEEK_NAME, new Font(fontSizeProperty.get()
+							+ FONT_SIZE_DELTA)) <= targetSize) {
 				fontSizeProperty.set(fontSizeProperty.get() + FONT_SIZE_DELTA);
 			}
 		} else {

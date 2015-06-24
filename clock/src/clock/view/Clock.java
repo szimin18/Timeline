@@ -143,8 +143,8 @@ public class Clock extends Pane {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
-				clockChart.setHeight(value * 6 / 7);
-				horizontalLegend.setHeight(value / 7);
+				clockChart.setHeight(value * 7 / 8);
+				horizontalLegend.setHeight(value / 8);
 			}
 		});
 
