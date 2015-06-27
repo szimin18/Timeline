@@ -6,7 +6,6 @@ import java.util.List;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineEvent;
@@ -32,15 +31,15 @@ public class ClockPresenter extends Application {
 			long timeRange = yearsInMiliseconds(1);
 			List<TimelineDataSet> timelineDataSets = new ArrayList<TimelineDataSet>();
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), eventsPerDataset, Color.GOLD));
+					currentTimeMillis), eventsPerDataset));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), eventsPerDataset, Color.GREEN));
+					currentTimeMillis), eventsPerDataset));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), eventsPerDataset, Color.GREEN));
+					currentTimeMillis), eventsPerDataset));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), eventsPerDataset, Color.BLUE));
+					currentTimeMillis), eventsPerDataset));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), eventsPerDataset, Color.RED));
+					currentTimeMillis), eventsPerDataset));
 
 			Clock clock = Clock.newInstance(timelineDataSets);
 

@@ -14,8 +14,7 @@ public class RandomDataGenerator {
 		throw new AssertionError();
 	}
 
-	public static TimelineDataSet generateDataSet(Date startDate, Date endDate, int numberOfItemsToGenerate,
-			Color color) {
+	public static TimelineDataSet generateDataSet(Date startDate, Date endDate, int numberOfItemsToGenerate, Color color) {
 		long startTime = startDate.getTime();
 		long timeStamps = endDate.getTime() - startTime;
 		Random random = new Random();
@@ -23,9 +22,14 @@ public class RandomDataGenerator {
 		List<TimelineEvent> events = new ArrayList<>();
 
 		for (int i = 0; i < numberOfItemsToGenerate; i++) {
-			events.add(TimelineEvent.newInstance(new Date(startTime + Math.abs(random.nextLong() % timeStamps))));
+			events.add(TimelineEvent.newInstance(new Date(startTime + Math.abs(random.nextLong() % timeStamps)), null));
 		}
 
-		return new TimelineDataSet(events, color);
+		return TimelineDataSet.newInstance(events, color);
+	}
+
+	public static TimelineDataSet generateDataSet(Date startDate, Date endDate, int numberOfItemsToGenerate) {
+		return generateDataSet(startDate, endDate, numberOfItemsToGenerate,
+				TimelineDataSet.DEFAULT_DATA_SET_COLOR_PROVIDER.getDataSetColor(null));
 	}
 }

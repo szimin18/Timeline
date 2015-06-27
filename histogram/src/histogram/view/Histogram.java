@@ -43,7 +43,6 @@ import model.dataset.TimelineDataSet;
 import model.event.TimelineCategory;
 import model.event.TimelineChartData;
 
-@SuppressWarnings("deprecation")
 public class Histogram extends Pane {
 
 	private static final String SELECTED_STYLE = "-fx-border-color: black; -fx-border-width: 3; -fx-border-style: dotted";

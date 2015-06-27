@@ -12,7 +12,6 @@ import java.util.List;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import model.dataset.TimelineDataSet;
 import presenter.generator.RandomDataGenerator;
@@ -25,7 +24,7 @@ public class HistogramPresenter extends Application {
 
 	@Override
 	public void start(Stage primaryStage) {
-		
+
 		try {
 			primaryStage.setTitle("Histogram test");
 
@@ -35,15 +34,15 @@ public class HistogramPresenter extends Application {
 			
 			List<TimelineDataSet> timelineDataSets = new ArrayList<TimelineDataSet>();
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), 100, Color.GOLD));
+					currentTimeMillis), 100));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), 100, Color.AQUA));
+					currentTimeMillis), 100));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), 100, Color.GREEN));
+					currentTimeMillis), 100));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), 100, Color.BLUE));
+					currentTimeMillis), 100));
 			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), 100, Color.RED));
+					currentTimeMillis), 100));
 
 			Histogram histogram = new Histogram(timelineDataSets);
 
@@ -53,7 +52,7 @@ public class HistogramPresenter extends Application {
 					System.out.printf("Filter changed: %s - %s\n", event.getBeginning(), event.getEnd());
 				}
 			});
-			
+
 			histogram.addSelectionChangeListener(new HistogramSelectionChangeListener() {
 				@Override
 				public void selectionChanged(HistogramSelectionChangeEvent event) {
