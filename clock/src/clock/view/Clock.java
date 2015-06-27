@@ -32,7 +32,7 @@ import clock.util.DayOfWeek;
  * TODO
  * 
  * - add vertical legend with switch
- * - enhance all sizes
+ * - enhance all sizes (bin radius and font size)
  * - labels max size
  * 
  */
@@ -40,20 +40,19 @@ import clock.util.DayOfWeek;
 public class Clock extends Pane {
 	private static final Color DEFAULT_CHART_BASE_COLOR = Color.AQUA;
 
-	private static final Color DEFAULT_CHART_HIGHLIGHTED_COLOR = Color.GREEN;
-
-	private static final Color DEFAULT_CHART_SELECTED_COLOR = Color.CHOCOLATE;
+	private static final Color DEFAULT_CHART_HIGHLIGHTED_COLOR = Color.CHOCOLATE;
 
 	private static final double CHART_MINIMUM_BRIGHTNESS = 0.2;
 
 	private static final double CHART_MAXIMUM_BRIGHTNESS = 1.0;
+	
+	private static final double HORIZONTAL_LEGEND_PART = 1.0 / 8.0;
 
 	private final List<IClockSelectionListener> selectionListeners = new ArrayList<>();
 
 	private Map<DayOfWeek, Map<Integer, TimelineChartData>> groupedData;
 
-	private Clock(List<TimelineDataSet> timelineDataSets, Color chartBaseColor, Color chartHighlightedColor,
-			Color chartSelectedColor) {
+	private Clock(List<TimelineDataSet> timelineDataSets, Color chartBaseColor, Color chartHighlightedColor) {
 
 		final VBox vBox = new VBox();
 
@@ -80,8 +79,7 @@ public class Clock extends Pane {
 				CHART_MAXIMUM_BRIGHTNESS, CHART_MINIMUM_BRIGHTNESS, minimumEventsCount, maximumEventsCount);
 
 		final ClockChart clockChart = new ClockChart(groupedData, quantityLevelProvider, chartBaseColor.getHue(),
-				chartBaseColor.getSaturation(), chartHighlightedColor.getHue(), chartHighlightedColor.getSaturation(),
-				chartSelectedColor.getHue(), chartSelectedColor.getSaturation());
+				chartBaseColor.getSaturation(), chartHighlightedColor.getHue(), chartHighlightedColor.getSaturation());
 
 		vBox.getChildren().add(clockChart);
 
@@ -143,8 +141,8 @@ public class Clock extends Pane {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
-				clockChart.setHeight(value * 7 / 8);
-				horizontalLegend.setHeight(value / 8);
+				clockChart.setHeight(value * (1 - HORIZONTAL_LEGEND_PART));
+				horizontalLegend.setHeight(value * HORIZONTAL_LEGEND_PART);
 			}
 		});
 
@@ -168,13 +166,12 @@ public class Clock extends Pane {
 	}
 
 	public static Clock newInstance(List<TimelineDataSet> timelineDataSets) {
-		return new Clock(timelineDataSets, DEFAULT_CHART_BASE_COLOR, DEFAULT_CHART_HIGHLIGHTED_COLOR,
-				DEFAULT_CHART_SELECTED_COLOR);
+		return new Clock(timelineDataSets, DEFAULT_CHART_BASE_COLOR, DEFAULT_CHART_HIGHLIGHTED_COLOR);
 	}
 
 	public static Clock newInstance(List<TimelineDataSet> timelineDataSets, Color chartBaseColor,
-			Color chartHighlightedColor, Color chartSelectedColor) {
-		return new Clock(timelineDataSets, chartBaseColor, chartHighlightedColor, chartSelectedColor);
+			Color chartHighlightedColor) {
+		return new Clock(timelineDataSets, chartBaseColor, chartHighlightedColor);
 	}
 
 	public void addSelectionListener(IClockSelectionListener listener) {
