@@ -16,6 +16,8 @@ import javafx.event.EventHandler;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.ArcType;
@@ -116,13 +118,21 @@ public class ClockChart extends Canvas {
 
 	private final Map<DayOfWeek, Set<Integer>> selectedElements;
 
+	private final Map<DayOfWeek, Set<Integer>> currentlyPressedElements;
+
 	{
 		selectedElements = new HashMap<>(DayOfWeek.VALUES_LIST.size());
+		currentlyPressedElements = new HashMap<>(DayOfWeek.VALUES_LIST.size());
 
 		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
 			selectedElements.put(dayOfWeek, new HashSet<Integer>());
+			currentlyPressedElements.put(dayOfWeek, new HashSet<Integer>());
 		}
 	}
+
+	private boolean controlKeyPressed = false;
+
+	private ClockSelectionDirection currentClockPressDirection = ClockSelectionDirection.UNDEFINED;
 
 	private Label popupLabel;
 
@@ -130,9 +140,13 @@ public class ClockChart extends Canvas {
 
 	private DoubleProperty fontSizeProperty = new SimpleDoubleProperty(0);
 
-	private DayOfWeek highlightedDayOfWeek;
+	private DayOfWeek highlightedDayOfWeek = null;
 
 	private int highlightedHour;
+
+	private DayOfWeek pressedDayOfWeek = null;
+
+	private int pressedHour;
 
 	private double chartWidth = 0;
 
@@ -143,6 +157,10 @@ public class ClockChart extends Canvas {
 	private double chartHighlightedHue;
 
 	private double chartHighlightedSaturation;
+
+	private static enum ClockSelectionDirection {
+		CLOCKWISE, COUNTERCLOCKWISE, UNDEFINED
+	}
 
 	public ClockChart(Map<DayOfWeek, Map<Integer, TimelineChartData>> groupedData,
 			QuantityLevelProvider quantityLevelProvider, double chartBaseHue, double chartBaseSaturation,
@@ -173,6 +191,25 @@ public class ClockChart extends Canvas {
 			}
 		});
 
+		setFocusTraversable(true);
+
+		addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
+			@Override
+			public void handle(KeyEvent event) {
+				if (event.getCode() == KeyCode.CONTROL) {
+					controlKeyPressed = true;
+				}
+			}
+		});
+		addEventHandler(KeyEvent.KEY_RELEASED, new EventHandler<KeyEvent>() {
+			@Override
+			public void handle(KeyEvent event) {
+				if (event.getCode() == KeyCode.CONTROL) {
+					controlKeyPressed = false;
+				}
+			}
+		});
+
 		addEventHandler(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
@@ -183,13 +220,27 @@ public class ClockChart extends Canvas {
 		addEventHandler(MouseEvent.MOUSE_EXITED, new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
-				notifyMouseExited();
+				handleMouseExited();
 			}
 		});
-		addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+		addEventHandler(MouseEvent.MOUSE_DRAGGED, new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
-				handleMouseClicked(event.getX() - getWidth() / 2, -(event.getY() - getHeight() / 2));
+				handleMouseDragged(event.getX() - getWidth() / 2, -(event.getY() - getHeight() / 2),
+						event.getScreenX(), event.getScreenY());
+			}
+		});
+		addEventHandler(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				handleMousePressed(event.getX() - getWidth() / 2, -(event.getY() - getHeight() / 2),
+						event.getScreenX(), event.getScreenY());
+			}
+		});
+		addEventHandler(MouseEvent.MOUSE_RELEASED, new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				handleMouseReleased();
 			}
 		});
 	}
@@ -198,22 +249,140 @@ public class ClockChart extends Canvas {
 		DayOfWeek dayOfWeek = getDayOfWeek(mouseX, mouseY);
 
 		if (dayOfWeek == null) {
-			notifyMouseExited();
+			handleMouseExited();
 		} else {
-			DayOfWeek oldHighlightedDayOfWeek = highlightedDayOfWeek;
-			int oldHighlightedHour = highlightedHour;
-			highlightedDayOfWeek = dayOfWeek;
-			highlightedHour = getHour(mouseX, mouseY);
+			notifyMouseMoved(mouseScreenX, mouseScreenY, dayOfWeek, getHour(mouseX, mouseY));
+		}
+	}
 
-			popup.show(getScene().getWindow());
-			popupLabel.setText(groupedData.get(dayOfWeek).get(getHour(mouseX, mouseY)).getDescription());
-			popup.setX(Math.min(mouseScreenX + CURSOR_WIDTH, Screen.getPrimary().getVisualBounds().getWidth()
-					- popupLabel.getWidth()));
-			popup.setY(mouseScreenY + CURSOR_HEIGHT);
+	private void handleMouseExited() {
+		pressedDayOfWeek = null;
+		currentClockPressDirection = ClockSelectionDirection.UNDEFINED;
 
-			if (highlightedDayOfWeek != oldHighlightedDayOfWeek || highlightedHour != oldHighlightedHour) {
-				drawFrame();
+		for (Set<Integer> hours : currentlyPressedElements.values()) {
+			hours.clear();
+		}
+
+		notifyMouseExited();
+		drawFrame();
+		notifyClockChartListeners();
+	}
+
+	private void handleMouseDragged(double mouseX, double mouseY, double mouseScreenX, double mouseScreenY) {
+		DayOfWeek dayOfWeek = getDayOfWeek(mouseX, mouseY);
+
+		if (dayOfWeek == null) {
+			handleMouseExited();
+		} else {
+			int hour = getHour(mouseX, mouseY);
+
+			if (pressedDayOfWeek != null) {
+
+				if (hour == pressedHour) {
+					currentClockPressDirection = ClockSelectionDirection.UNDEFINED;
+				} else {
+					if (currentClockPressDirection == ClockSelectionDirection.UNDEFINED) {
+						int hourDifferece = hour - pressedHour;
+
+						if (hourDifferece < 0) {
+							hourDifferece += 24;
+						}
+
+						if (hourDifferece <= 12) {
+							currentClockPressDirection = ClockSelectionDirection.CLOCKWISE;
+						} else {
+							currentClockPressDirection = ClockSelectionDirection.COUNTERCLOCKWISE;
+						}
+					}
+				}
+
+				for (DayOfWeek dayOfWeekToClear : DayOfWeek.VALUES_LIST) {
+					for (int hourToClear = 0; hourToClear < 24; hourToClear++) {
+						currentlyPressedElements.get(dayOfWeekToClear).remove(hourToClear);
+					}
+				}
+
+				int startingDayOfWeekIndex = pressedDayOfWeek.getIndex();
+				int endingDayOfWeekIndex = dayOfWeek.getIndex();
+
+				if (startingDayOfWeekIndex > endingDayOfWeekIndex) {
+					startingDayOfWeekIndex = dayOfWeek.getIndex();
+					endingDayOfWeekIndex = pressedDayOfWeek.getIndex();
+				}
+
+				int startingHour = pressedHour;
+				int endingHour = hour;
+
+				if (currentClockPressDirection == ClockSelectionDirection.COUNTERCLOCKWISE) {
+					startingHour = hour;
+					endingHour = pressedHour;
+				}
+
+				for (int dayOfWeekIndex = startingDayOfWeekIndex; dayOfWeekIndex <= endingDayOfWeekIndex; dayOfWeekIndex++) {
+					DayOfWeek dayOfWeekToAdd = DayOfWeek.forIndex(dayOfWeekIndex);
+
+					for (int hourToAdd = startingHour;;) {
+						currentlyPressedElements.get(dayOfWeekToAdd).add(hourToAdd);
+
+						if (hourToAdd == endingHour) {
+							break;
+						}
+
+						hourToAdd = (hourToAdd + 1) % 24;
+					}
+				}
 			}
+
+			notifyMouseMoved(mouseScreenX, mouseScreenY, dayOfWeek, hour);
+			drawFrame();
+			notifyClockChartListeners();
+		}
+	}
+
+	private void handleMousePressed(double mouseX, double mouseY, double mouseScreenX, double mouseScreenY) {
+		DayOfWeek dayOfWeek = getDayOfWeek(mouseX, mouseY);
+
+		if (dayOfWeek != null) {
+			pressedDayOfWeek = dayOfWeek;
+			pressedHour = getHour(mouseX, mouseY);
+		}
+
+		if (!controlKeyPressed) {
+			for (Set<Integer> hours : selectedElements.values()) {
+				hours.clear();
+			}
+		}
+
+		handleMouseDragged(mouseX, mouseY, mouseScreenX, mouseScreenY);
+	}
+
+	private void handleMouseReleased() {
+		pressedDayOfWeek = null;
+		currentClockPressDirection = ClockSelectionDirection.UNDEFINED;
+		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
+			for (int hour = 0; hour < 24; hour++) {
+				if (currentlyPressedElements.get(dayOfWeek).contains(hour)) {
+					selectedElements.get(dayOfWeek).add(hour);
+				}
+				currentlyPressedElements.get(dayOfWeek).remove(hour);
+			}
+		}
+	}
+
+	private void notifyMouseMoved(double mouseScreenX, double mouseScreenY, DayOfWeek dayOfWeek, int newHighlightedHour) {
+		DayOfWeek oldHighlightedDayOfWeek = highlightedDayOfWeek;
+		int oldHighlightedHour = highlightedHour;
+		highlightedDayOfWeek = dayOfWeek;
+		highlightedHour = newHighlightedHour;
+
+		popup.show(getScene().getWindow());
+		popupLabel.setText(groupedData.get(dayOfWeek).get(newHighlightedHour).getDescription());
+		popup.setX(Math.min(mouseScreenX + CURSOR_WIDTH,
+				Screen.getPrimary().getVisualBounds().getWidth() - popupLabel.getWidth()));
+		popup.setY(mouseScreenY + CURSOR_HEIGHT);
+
+		if (highlightedDayOfWeek != oldHighlightedDayOfWeek || highlightedHour != oldHighlightedHour) {
+			drawFrame();
 		}
 	}
 
@@ -227,23 +396,6 @@ public class ClockChart extends Canvas {
 
 		if (highlightedDayOfWeek != oldHighlightedDayOfWeek || highlightedHour != oldHighlightedHour) {
 			drawFrame();
-		}
-	}
-
-	private void handleMouseClicked(double mouseX, double mouseY) {
-		DayOfWeek dayOfWeek = getDayOfWeek(mouseX, mouseY);
-
-		if (dayOfWeek != null) {
-			int hour = getHour(mouseX, mouseY);
-
-			if (selectedElements.get(dayOfWeek).contains(hour)) {
-				selectedElements.get(dayOfWeek).remove(hour);
-			} else {
-				selectedElements.get(dayOfWeek).add(hour);
-			}
-
-			drawFrame();
-			notifyClockChartListeners();
 		}
 	}
 
@@ -378,7 +530,8 @@ public class ClockChart extends Canvas {
 				if (currentDayOfWeekIndex != 0) {
 					DayOfWeek currentDayOfWeek = DayOfWeek.VALUES_LIST.get(currentDayOfWeekIndex - 1);
 					sorroundingCount++;
-					if (selectedElements.get(currentDayOfWeek).contains(hour)) {
+					if (selectedElements.get(currentDayOfWeek).contains(hour)
+							|| currentlyPressedElements.get(currentDayOfWeek).contains(hour)) {
 						sorroundingSelectedCount++;
 					}
 					soroundingSumValue += quantityLevelProvider.getLevelForQuantity(
@@ -388,7 +541,8 @@ public class ClockChart extends Canvas {
 				if (currentDayOfWeekIndex != daysOfWeekCount) {
 					DayOfWeek currentDayOfWeek = DayOfWeek.VALUES_LIST.get(currentDayOfWeekIndex);
 					sorroundingCount++;
-					if (selectedElements.get(currentDayOfWeek).contains(hour)) {
+					if (selectedElements.get(currentDayOfWeek).contains(hour)
+							|| currentlyPressedElements.get(currentDayOfWeek).contains(hour)) {
 						sorroundingSelectedCount++;
 					}
 					soroundingSumValue += quantityLevelProvider.getLevelForQuantity(
@@ -426,13 +580,15 @@ public class ClockChart extends Canvas {
 
 				int earlierHour = (hour + 23) % 24;
 
-				if (selectedElements.get(currentDayOfWeek).contains(earlierHour)) {
+				if (selectedElements.get(currentDayOfWeek).contains(earlierHour)
+						|| currentlyPressedElements.get(currentDayOfWeek).contains(earlierHour)) {
 					sorroundingSelectedCount++;
 				}
 				soroundingSumValue += quantityLevelProvider.getLevelForQuantity(
 						groupedData.get(currentDayOfWeek).get(earlierHour).getEventsCount()).getLevelValue();
 
-				if (selectedElements.get(currentDayOfWeek).contains(hour)) {
+				if (selectedElements.get(currentDayOfWeek).contains(hour)
+						|| currentlyPressedElements.get(currentDayOfWeek).contains(hour)) {
 					sorroundingSelectedCount++;
 				}
 				soroundingSumValue += quantityLevelProvider.getLevelForQuantity(
@@ -592,8 +748,11 @@ public class ClockChart extends Canvas {
 		List<ClockChartSliceDescriptor> selectedSlices = new ArrayList<>();
 
 		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
-			for (int hour : selectedElements.get(dayOfWeek)) {
-				selectedSlices.add(new ClockChartSliceDescriptor(dayOfWeek, hour));
+			for (int hour = 0; hour < 24; hour++) {
+				if (selectedElements.get(dayOfWeek).contains(hour)
+						|| currentlyPressedElements.get(dayOfWeek).contains(hour)) {
+					selectedSlices.add(new ClockChartSliceDescriptor(dayOfWeek, hour));
+				}
 			}
 		}
 
