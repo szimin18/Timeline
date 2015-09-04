@@ -12,7 +12,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineChartData;
 import model.event.TimelineEvent;
@@ -20,6 +19,7 @@ import clock.chart.ClockChart;
 import clock.chart.ClockChart.ClockChartSelectionEvent;
 import clock.chart.ClockChart.ClockChartSliceDescriptor;
 import clock.chart.ClockChart.IClockChartListener;
+import clock.color.HeatMapColorProvider;
 import clock.grouper.Grouper;
 import clock.grouper.QuantityLeveler;
 import clock.grouper.QuantityLeveler.QuantityLevel;
@@ -32,27 +32,22 @@ import clock.util.DayOfWeek;
  * TODO
  * 
  * - add vertical legend with switch
- * - enhance all sizes (bin radius and font size)
- * - labels max size
+ * - enhance all sizes (bind radius and font size)
  * 
  */
 
 public class Clock extends Pane {
-	private static final Color DEFAULT_CHART_BASE_COLOR = Color.AQUA;
+	private static final double CHART_HEAT_MINIMUM_VALUE = 0.0;
 
-	private static final Color DEFAULT_CHART_HIGHLIGHTED_COLOR = Color.CHOCOLATE;
+	private static final double CHART_HEAT_MAXIMUM_VALUE = 1.0;
 
-	private static final double CHART_MINIMUM_BRIGHTNESS = 0.2;
-
-	private static final double CHART_MAXIMUM_BRIGHTNESS = 1.0;
-	
 	private static final double HORIZONTAL_LEGEND_PART = 1.0 / 8.0;
 
 	private final List<IClockSelectionListener> selectionListeners = new ArrayList<>();
 
 	private Map<DayOfWeek, Map<Integer, TimelineChartData>> groupedData;
 
-	private Clock(List<TimelineDataSet> timelineDataSets, Color chartBaseColor, Color chartHighlightedColor) {
+	private Clock(List<TimelineDataSet> timelineDataSets) {
 
 		final VBox vBox = new VBox();
 
@@ -76,10 +71,9 @@ public class Clock extends Pane {
 		}
 
 		QuantityLevelProvider quantityLevelProvider = QuantityLeveler.getQuantityLevelProvider(
-				CHART_MAXIMUM_BRIGHTNESS, CHART_MINIMUM_BRIGHTNESS, minimumEventsCount, maximumEventsCount);
+				CHART_HEAT_MINIMUM_VALUE, CHART_HEAT_MAXIMUM_VALUE, minimumEventsCount, maximumEventsCount);
 
-		final ClockChart clockChart = new ClockChart(groupedData, quantityLevelProvider, chartBaseColor.getHue(),
-				chartBaseColor.getSaturation(), chartHighlightedColor.getHue(), chartHighlightedColor.getSaturation());
+		final ClockChart clockChart = new ClockChart(groupedData, quantityLevelProvider);
 
 		vBox.getChildren().add(clockChart);
 
@@ -110,14 +104,11 @@ public class Clock extends Pane {
 			}
 		}
 
-		double chartBaseHue = chartBaseColor.getHue();
-		double chartBaseSaturation = chartBaseColor.getSaturation();
-
 		List<LegendEntry> legendEntries = new ArrayList<>();
 
 		for (QuantityLevel quantityLevel : allQuantityLevels) {
-			legendEntries.add(new LegendEntry(quantityLevel.getLevelDescription(), Color.hsb(chartBaseHue,
-					chartBaseSaturation, quantityLevel.getLevelValue())));
+			legendEntries.add(new LegendEntry(quantityLevel.getLevelDescription(), HeatMapColorProvider
+					.getColorForValue(quantityLevel.getLevelValue())));
 		}
 
 		final HorizontalLegend horizontalLegend = new HorizontalLegend(legendEntries, clockChart.fontSizeProperty());
@@ -166,12 +157,7 @@ public class Clock extends Pane {
 	}
 
 	public static Clock newInstance(List<TimelineDataSet> timelineDataSets) {
-		return new Clock(timelineDataSets, DEFAULT_CHART_BASE_COLOR, DEFAULT_CHART_HIGHLIGHTED_COLOR);
-	}
-
-	public static Clock newInstance(List<TimelineDataSet> timelineDataSets, Color chartBaseColor,
-			Color chartHighlightedColor) {
-		return new Clock(timelineDataSets, chartBaseColor, chartHighlightedColor);
+		return new Clock(timelineDataSets);
 	}
 
 	public void addSelectionListener(IClockSelectionListener listener) {

@@ -27,6 +27,7 @@ import javafx.stage.Popup;
 import javafx.stage.PopupBuilder;
 import javafx.stage.Screen;
 import model.event.TimelineChartData;
+import clock.color.HeatMapColorProvider;
 import clock.grouper.QuantityLeveler.QuantityLevel;
 import clock.grouper.QuantityLeveler.QuantityLevelProvider;
 import clock.util.DayOfWeek;
@@ -112,10 +113,6 @@ public class ClockChart extends Canvas {
 
 	private final QuantityLevelProvider quantityLevelProvider;
 
-	private final double chartBaseHue;
-
-	private final double chartBaseSaturation;
-
 	private final Map<DayOfWeek, Set<Integer>> selectedElements;
 
 	private final Map<DayOfWeek, Set<Integer>> currentlyPressedElements;
@@ -154,23 +151,14 @@ public class ClockChart extends Canvas {
 
 	private double chartRadius = 0;
 
-	private double chartHighlightedHue;
-
-	private double chartHighlightedSaturation;
-
 	private static enum ClockSelectionDirection {
 		CLOCKWISE, COUNTERCLOCKWISE, UNDEFINED
 	}
 
 	public ClockChart(Map<DayOfWeek, Map<Integer, TimelineChartData>> groupedData,
-			QuantityLevelProvider quantityLevelProvider, double chartBaseHue, double chartBaseSaturation,
-			double chartHighlightedHue, double chartHighlightedSaturation) {
+			QuantityLevelProvider quantityLevelProvider) {
 		this.groupedData = groupedData;
 		this.quantityLevelProvider = quantityLevelProvider;
-		this.chartBaseHue = chartBaseHue;
-		this.chartBaseSaturation = chartBaseSaturation;
-		this.chartHighlightedHue = chartHighlightedHue;
-		this.chartHighlightedSaturation = chartHighlightedSaturation;
 
 		popupLabel = new Label();
 		popupLabel.setStyle("-fx-background-color: white;-fx-border-color: black");
@@ -484,17 +472,7 @@ public class ClockChart extends Canvas {
 				QuantityLevel levelForQuantity = quantityLevelProvider.getLevelForQuantity(timelineChartData
 						.getEventsCount());
 
-				double sliceBrightness = levelForQuantity.getLevelValue();
-
-				double sliceHue = chartBaseHue;
-				double sliceSaturation = chartBaseSaturation;
-
-				if (highlightedDayOfWeek == dayOfWeek && highlightedHour == hour) {
-					sliceHue = chartHighlightedHue;
-					sliceSaturation = chartHighlightedSaturation;
-				}
-
-				Color fillColor = Color.hsb(sliceHue, sliceSaturation, sliceBrightness);
+				Color fillColor = HeatMapColorProvider.getColorForValue(levelForQuantity.getLevelValue());
 
 				drawChartPart(chartMiddleX, chartMiddleY, currentInnerRadius, currentOuterRadius, hour, fillColor);
 			}
@@ -523,45 +501,33 @@ public class ClockChart extends Canvas {
 
 		for (int currentDayOfWeekIndex = 0; currentDayOfWeekIndex <= daysOfWeekCount; currentDayOfWeekIndex++) {
 			for (int hour = 0; hour < 24; hour++) {
-				int sorroundingCount = 0;
 				int sorroundingSelectedCount = 0;
-				double soroundingSumValue = 0;
 
 				if (currentDayOfWeekIndex != 0) {
 					DayOfWeek currentDayOfWeek = DayOfWeek.VALUES_LIST.get(currentDayOfWeekIndex - 1);
-					sorroundingCount++;
 					if (selectedElements.get(currentDayOfWeek).contains(hour)
 							|| currentlyPressedElements.get(currentDayOfWeek).contains(hour)) {
 						sorroundingSelectedCount++;
 					}
-					soroundingSumValue += quantityLevelProvider.getLevelForQuantity(
-							groupedData.get(currentDayOfWeek).get(hour).getEventsCount()).getLevelValue();
 				}
 
 				if (currentDayOfWeekIndex != daysOfWeekCount) {
 					DayOfWeek currentDayOfWeek = DayOfWeek.VALUES_LIST.get(currentDayOfWeekIndex);
-					sorroundingCount++;
 					if (selectedElements.get(currentDayOfWeek).contains(hour)
 							|| currentlyPressedElements.get(currentDayOfWeek).contains(hour)) {
 						sorroundingSelectedCount++;
 					}
-					soroundingSumValue += quantityLevelProvider.getLevelForQuantity(
-							groupedData.get(currentDayOfWeek).get(hour).getEventsCount()).getLevelValue();
 				}
 
 				double lineWidth;
-				Color strokeColor;
 
 				if (sorroundingSelectedCount == 1) {
 					lineWidth = SELECTED_LINE_WIDTH;
-					strokeColor = Color.BLACK;
 				} else {
 					lineWidth = NORMAL_LINE_WIDTH;
-					strokeColor = Color.hsb(chartBaseHue, chartBaseSaturation,
-							(soroundingSumValue / sorroundingCount) / 2);
 				}
 
-				drawArc(chartMiddleX, chartMiddleY, currentOuterRadius, hour, strokeColor, lineWidth);
+				drawArc(chartMiddleX, chartMiddleY, currentOuterRadius, hour, lineWidth);
 			}
 
 			currentOuterRadius = currentInnerRadius;
@@ -574,7 +540,6 @@ public class ClockChart extends Canvas {
 		for (int currentDayOfWeekIndex = 0; currentDayOfWeekIndex < daysOfWeekCount; currentDayOfWeekIndex++) {
 			for (int hour = 0; hour < 24; hour++) {
 				int sorroundingSelectedCount = 0;
-				double soroundingSumValue = 0;
 
 				DayOfWeek currentDayOfWeek = DayOfWeek.VALUES_LIST.get(currentDayOfWeekIndex);
 
@@ -584,29 +549,21 @@ public class ClockChart extends Canvas {
 						|| currentlyPressedElements.get(currentDayOfWeek).contains(earlierHour)) {
 					sorroundingSelectedCount++;
 				}
-				soroundingSumValue += quantityLevelProvider.getLevelForQuantity(
-						groupedData.get(currentDayOfWeek).get(earlierHour).getEventsCount()).getLevelValue();
 
 				if (selectedElements.get(currentDayOfWeek).contains(hour)
 						|| currentlyPressedElements.get(currentDayOfWeek).contains(hour)) {
 					sorroundingSelectedCount++;
 				}
-				soroundingSumValue += quantityLevelProvider.getLevelForQuantity(
-						groupedData.get(currentDayOfWeek).get(hour).getEventsCount()).getLevelValue();
 
 				double lineWidth;
-				Color strokeColor;
 
 				if (sorroundingSelectedCount == 1) {
 					lineWidth = SELECTED_LINE_WIDTH;
-					strokeColor = Color.BLACK;
 				} else {
 					lineWidth = NORMAL_LINE_WIDTH;
-					strokeColor = Color.hsb(chartBaseHue, chartBaseSaturation, soroundingSumValue / 4);
 				}
 
-				drawLine(chartMiddleX, chartMiddleY, currentInnerRadius, currentOuterRadius, hour - 1, strokeColor,
-						lineWidth);
+				drawLine(chartMiddleX, chartMiddleY, currentInnerRadius, currentOuterRadius, hour - 1, lineWidth);
 			}
 
 			currentOuterRadius = currentInnerRadius;
@@ -695,11 +652,10 @@ public class ClockChart extends Canvas {
 		graphicsContext.fill();
 	}
 
-	private void drawArc(double chartMiddleX, double chartMiddleY, double radius, int hour, Color strokeColor,
-			double lineWidth) {
+	private void drawArc(double chartMiddleX, double chartMiddleY, double radius, int hour, double lineWidth) {
 		int transformedHour = (29 - hour) % 24;
 
-		graphicsContext.setStroke(strokeColor);
+		graphicsContext.setStroke(Color.BLACK);
 		graphicsContext.setLineWidth(lineWidth);
 
 		double chartSide = 2 * radius;
@@ -709,10 +665,10 @@ public class ClockChart extends Canvas {
 	}
 
 	private void drawLine(double chartMiddleX, double chartMiddleY, double innerRadius, double outerRadius, int hour,
-			Color strokeColor, double lineWidth) {
+			double lineWidth) {
 		int transformedHour = (29 - hour) % 24;
 
-		graphicsContext.setStroke(strokeColor);
+		graphicsContext.setStroke(Color.BLACK);
 		graphicsContext.setLineWidth(lineWidth);
 
 		double point1X = chartMiddleX + innerRadius * getCosineForHour(transformedHour);

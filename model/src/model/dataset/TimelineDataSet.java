@@ -8,16 +8,16 @@ import model.event.TimelineEvent;
 import com.google.common.collect.Iterables;
 
 public class TimelineDataSet {
-	public static final IDataSetColorProvider DEFAULT_DATA_SET_COLOR_PROVIDER = new IDataSetColorProvider() {
-		private final Color[] colorsList = new Color[] { Color.GOLD, Color.AQUA, Color.GREEN, Color.BLUE, Color.RED };
+	private static final Color[] ALL_COLORS = new Color[] { Color.GOLD, Color.AQUA, Color.GREEN, Color.BLUE, Color.RED };
 
-		private int nextColorIndex;
+	private static final IDataSetColorProvider DEFAULT_DATA_SET_COLOR_PROVIDER = new IDataSetColorProvider() {
+		private int nextColorIndex = 0;
 
 		@Override
 		public Color getDataSetColor(List<TimelineEvent> unsortedEvents) {
-			Color result = colorsList[nextColorIndex];
+			Color result = ALL_COLORS[nextColorIndex];
 			nextColorIndex++;
-			nextColorIndex %= colorsList.length;
+			nextColorIndex %= ALL_COLORS.length;
 			return result;
 		}
 	};
@@ -36,6 +36,10 @@ public class TimelineDataSet {
 
 	public static TimelineDataSet newInstance(List<TimelineEvent> unsortedEvents, IDataSetColorProvider colorProvider) {
 		return newInstance(unsortedEvents, colorProvider.getDataSetColor(unsortedEvents));
+	}
+
+	public static TimelineDataSet newInstance(List<TimelineEvent> unsortedEvents) {
+		return newInstance(unsortedEvents, DEFAULT_DATA_SET_COLOR_PROVIDER.getDataSetColor(unsortedEvents));
 	}
 
 	public List<TimelineEvent> getSortedEvents() {
