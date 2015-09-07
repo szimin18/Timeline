@@ -1,4 +1,4 @@
-package clock.chart;
+package clock.view.chart;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,12 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.ReadOnlyDoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
+import javafx.geometry.Dimension2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
@@ -31,17 +29,20 @@ import clock.color.HeatMapColorProvider;
 import clock.grouper.QuantityLeveler.QuantityLevel;
 import clock.grouper.QuantityLeveler.QuantityLevelProvider;
 import clock.util.DayOfWeek;
+import clock.view.font.FontSizeManager;
+import clock.view.font.IFontSizeNode;
 
+import com.google.common.collect.Maps;
 import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.FontMetrics;
 import com.sun.javafx.tk.Toolkit;
 
-public class ClockChart extends Canvas {
+public class ClockChart extends Canvas implements IFontSizeNode {
 	private static final double SLICE_RADIUS_RATIO = 1.0 / 9.0;
 
-	private static final double TOP_BOTTOM_MARGIN = 13.0;
-
-	private static final double SIDES_MARGIN = 33.0;
+	// private static final double TOP_BOTTOM_MARGIN = 13.0;
+	//
+	// private static final double SIDES_MARGIN = 33.0;
 
 	private static final double CURSOR_WIDTH = 15.0;
 
@@ -51,13 +52,13 @@ public class ClockChart extends Canvas {
 
 	private static final String OUTER_LABEL_TEMPLATE = " %d - %d ";
 
-	private static final Map<Integer, Double> SINE_FOR_HOUR = new HashMap<>();
+	private static final Map<Integer, Double> SINE_FOR_HOUR = Maps.newHashMap();
 
-	private static final Map<Integer, Double> COSINE_FOR_HOUR = new HashMap<>();
+	private static final Map<Integer, Double> COSINE_FOR_HOUR = Maps.newHashMap();
 
-	private static final Map<Integer, Double> OFFSET_SINE_FOR_HOUR = new HashMap<>();
+	private static final Map<Integer, Double> OFFSET_SINE_FOR_HOUR = Maps.newHashMap();
 
-	private static final Map<Integer, Double> OFFSET_COSINE_FOR_HOUR = new HashMap<>();
+	private static final Map<Integer, Double> OFFSET_COSINE_FOR_HOUR = Maps.newHashMap();
 
 	static {
 		double radiansPerHour = Math.PI * 2.0 / 24.0;
@@ -78,11 +79,7 @@ public class ClockChart extends Canvas {
 
 	private static final double SELECTED_LINE_WIDTH = 5;
 
-	private static final double MAX_FONT_SIZE = 10.0;
-
-	private static final double FONT_SIZE_DELTA = 1.0;
-
-	private static final double FONT_WIDTH_IN_SLICE_RATIO = 0.9;
+	private static final double MAXIMUM_TEXT_IN_RADIUS_RATIO = 0.9 * SLICE_RADIUS_RATIO;
 
 	private static final FontLoader FONT_LOADER = Toolkit.getToolkit().getFontLoader();
 
@@ -103,6 +100,24 @@ public class ClockChart extends Canvas {
 		}
 
 		LONGEST_DAY_OF_WEEK_NAME = longestDayOfWeekName;
+	}
+
+	private static final Map<Double, Dimension2D> MINIMUM_CHART_SIZES = Maps.newHashMap();
+
+	static {
+		for (double fontSize = FontSizeManager.MAX_FONT_SIZE; fontSize >= 0; fontSize -= FontSizeManager.FONT_SIZE_DELTA) {
+			Font font = new Font(fontSize);
+
+			double longestNameLength = FONT_LOADER.computeStringWidth(LONGEST_DAY_OF_WEEK_NAME, font);
+			double longestNameHeight = FONT_LOADER.getFontMetrics(font).getLineHeight();
+
+			double chartRadius = longestNameLength / MAXIMUM_TEXT_IN_RADIUS_RATIO;
+
+			double chartWidth = 2 * chartRadius + 2 * longestNameLength;
+			double chartHeight = 2 * chartRadius + 2 * longestNameHeight;
+
+			MINIMUM_CHART_SIZES.put(fontSize, new Dimension2D(chartWidth, chartHeight));
+		}
 	}
 
 	private final List<IClockChartListener> clockChartListeners = new ArrayList<>();
@@ -135,8 +150,6 @@ public class ClockChart extends Canvas {
 
 	private Popup popup;
 
-	private DoubleProperty fontSizeProperty = new SimpleDoubleProperty(0);
-
 	private DayOfWeek highlightedDayOfWeek = null;
 
 	private int highlightedHour;
@@ -145,11 +158,9 @@ public class ClockChart extends Canvas {
 
 	private int pressedHour;
 
-	private double chartWidth = 0;
-
-	private double chartHeight = 0;
-
 	private double chartRadius = 0;
+
+	private double fontSize = 0.0;
 
 	private static enum ClockSelectionDirection {
 		CLOCKWISE, COUNTERCLOCKWISE, UNDEFINED
@@ -164,20 +175,15 @@ public class ClockChart extends Canvas {
 		popupLabel.setStyle("-fx-background-color: white;-fx-border-color: black");
 		popup = PopupBuilder.create().content(popupLabel).width(200).height(50).autoFix(true).build();
 
-		widthProperty().addListener(new ChangeListener<Number>() {
+		ChangeListener<Number> recalculateRadiusListener = new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				chartWidth = newValue.doubleValue() - 2 * SIDES_MARGIN;
 				recalculateRadius();
 			}
-		});
-		heightProperty().addListener(new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				chartHeight = newValue.doubleValue() - 2 * TOP_BOTTOM_MARGIN;
-				recalculateRadius();
-			}
-		});
+		};
+
+		widthProperty().addListener(recalculateRadiusListener);
+		heightProperty().addListener(recalculateRadiusListener);
 
 		setFocusTraversable(true);
 
@@ -197,7 +203,6 @@ public class ClockChart extends Canvas {
 				}
 			}
 		});
-
 		addEventHandler(MouseEvent.MOUSE_MOVED, new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
@@ -418,40 +423,19 @@ public class ClockChart extends Canvas {
 	}
 
 	private void recalculateRadius() {
-		double oldChartRadius = chartRadius;
-		chartRadius = Math.min(chartWidth, chartHeight) / 2;
-		recalculateFontSize(chartRadius > oldChartRadius);
+		FontMetrics fontMetrics = FONT_LOADER.getFontMetrics(new Font(fontSize));
+
+		double width = getWidth() - 2 * fontMetrics.computeStringWidth(String.format(OUTER_LABEL_TEMPLATE, 20, 20));
+		double height = getHeight() - 2 * fontMetrics.getLineHeight();
+
+		chartRadius = Math.max(Math.min(width, height) / 2, 0);
 		drawFrame();
-	}
-
-	private void recalculateFontSize(boolean resizedToBigger) {
-		double targetSize = chartRadius * SLICE_RADIUS_RATIO * FONT_WIDTH_IN_SLICE_RATIO;
-
-		if (resizedToBigger) {
-			while (fontSizeProperty.get() + FONT_SIZE_DELTA <= MAX_FONT_SIZE
-					&& FONT_LOADER.computeStringWidth(LONGEST_DAY_OF_WEEK_NAME, new Font(fontSizeProperty.get()
-							+ FONT_SIZE_DELTA)) <= targetSize) {
-				fontSizeProperty.set(fontSizeProperty.get() + FONT_SIZE_DELTA);
-			}
-		} else {
-			while (FONT_LOADER.computeStringWidth(LONGEST_DAY_OF_WEEK_NAME, new Font(fontSizeProperty.get())) > targetSize) {
-				fontSizeProperty.set(fontSizeProperty.get() - FONT_SIZE_DELTA);
-			}
-		}
-
-		// System.out.println("------------------------------------");
-		// FontMetrics fontMetrics = FONT_LOADER.getFontMetrics(new
-		// Font(fontSizeProperty.get()));
-		// System.out.println(fontSizeProperty.get());
-		// System.out.println(fontMetrics.computeStringWidth(String.format(OUTER_LABEL_TEMPLATE,
-		// 18, 19)));
-		// System.out.println(fontMetrics.getLineHeight());
 	}
 
 	private void drawFrame() {
 		graphicsContext.clearRect(0, 0, getWidth(), getHeight());
 
-		Font font = new Font(fontSizeProperty.get());
+		Font font = new Font(fontSize);
 		graphicsContext.setFont(font);
 		FontMetrics fontMetrics = FONT_LOADER.getFontMetrics(font);
 		double textHeight = FONT_LOADER.getFontMetrics(font).getLineHeight();
@@ -696,8 +680,33 @@ public class ClockChart extends Canvas {
 		return OFFSET_COSINE_FOR_HOUR.get(hour);
 	}
 
-	public ReadOnlyDoubleProperty fontSizeProperty() {
-		return fontSizeProperty;
+	@Override
+	public void setFontSize(double newFontSize) {
+		boolean recalculate = false;
+
+		if (fontSize != newFontSize) {
+			recalculate = true;
+		}
+
+		fontSize = newFontSize;
+
+		if (recalculate) {
+			recalculateRadius();
+		}
+	}
+
+	@Override
+	public double getMaximumFontSize(double width, double height) {
+		for (double currentFontSize = FontSizeManager.MAX_FONT_SIZE;; currentFontSize -= FontSizeManager.FONT_SIZE_DELTA) {
+			if (currentFontSize <= FontSizeManager.MIN_FONT_SIZE) {
+				return currentFontSize;
+			}
+
+			Dimension2D minimumSize = MINIMUM_CHART_SIZES.get(currentFontSize);
+			if (width >= minimumSize.getWidth() && height >= minimumSize.getHeight()) {
+				return currentFontSize;
+			}
+		}
 	}
 
 	private void notifyClockChartListeners() {

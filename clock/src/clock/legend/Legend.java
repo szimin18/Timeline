@@ -2,30 +2,22 @@ package clock.legend;
 
 import java.util.List;
 
-import com.sun.javafx.tk.FontLoader;
-import com.sun.javafx.tk.FontMetrics;
-import com.sun.javafx.tk.Toolkit;
-
-import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
+import clock.view.font.IFontSizeNode;
 
-public abstract class Legend extends Canvas {
-	private static final FontLoader FONT_LOADER = Toolkit.getToolkit().getFontLoader();
-
+public abstract class Legend extends Canvas implements IFontSizeNode {
 	private final List<LegendEntry> legendEntries;
-
-	private ReadOnlyDoubleProperty fontSizeProperty;
 
 	private final GraphicsContext graphicsContext = getGraphicsContext2D();
 
-	protected Legend(List<LegendEntry> legendEntries, ReadOnlyDoubleProperty fontSizeProperty) {
+	private double fontSize = 0.0;
+
+	protected Legend(List<LegendEntry> legendEntries) {
 		this.legendEntries = legendEntries;
-		this.fontSizeProperty = fontSizeProperty;
 
 		ChangeListener<Number> drawFrameListener = new ChangeListener<Number>() {
 			@Override
@@ -36,19 +28,29 @@ public abstract class Legend extends Canvas {
 
 		widthProperty().addListener(drawFrameListener);
 		heightProperty().addListener(drawFrameListener);
-		fontSizeProperty.addListener(drawFrameListener);
+	}
+
+	@Override
+	public void setFontSize(double newFontSize) {
+		boolean redraw = false;
+
+		if (fontSize != newFontSize) {
+			redraw = true;
+		}
+
+		fontSize = newFontSize;
+
+		if (redraw) {
+			drawFrame(graphicsContext);
+		}
 	}
 
 	protected List<LegendEntry> getLegendEntries() {
 		return legendEntries;
 	}
 
-	protected Font getFont() {
-		return new Font(fontSizeProperty.get());
-	}
-
-	protected FontMetrics getFontMetrics() {
-		return FONT_LOADER.getFontMetrics(getFont());
+	protected double getFontSize() {
+		return fontSize;
 	}
 
 	protected abstract void drawFrame(GraphicsContext graphicsContext);

@@ -15,10 +15,6 @@ import javafx.scene.layout.VBox;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineChartData;
 import model.event.TimelineEvent;
-import clock.chart.ClockChart;
-import clock.chart.ClockChart.ClockChartSelectionEvent;
-import clock.chart.ClockChart.ClockChartSliceDescriptor;
-import clock.chart.ClockChart.IClockChartListener;
 import clock.color.HeatMapColorProvider;
 import clock.grouper.Grouper;
 import clock.grouper.QuantityLeveler;
@@ -27,6 +23,11 @@ import clock.grouper.QuantityLeveler.QuantityLevelProvider;
 import clock.legend.HorizontalLegend;
 import clock.legend.Legend.LegendEntry;
 import clock.util.DayOfWeek;
+import clock.view.chart.ClockChart;
+import clock.view.chart.ClockChart.ClockChartSelectionEvent;
+import clock.view.chart.ClockChart.ClockChartSliceDescriptor;
+import clock.view.chart.ClockChart.IClockChartListener;
+import clock.view.font.FontSizeManager;
 
 /*
  * TODO
@@ -50,6 +51,10 @@ public class Clock extends Pane {
 	private Clock(List<TimelineDataSet> timelineDataSets) {
 
 		final VBox vBox = new VBox();
+
+		// fontSizeManager
+
+		final FontSizeManager fontSizeManager = new FontSizeManager();
 
 		// clockChart
 
@@ -111,7 +116,7 @@ public class Clock extends Pane {
 					.getColorForValue(quantityLevel.getLevelValue())));
 		}
 
-		final HorizontalLegend horizontalLegend = new HorizontalLegend(legendEntries, clockChart.fontSizeProperty());
+		final HorizontalLegend horizontalLegend = new HorizontalLegend(legendEntries);
 
 		vBox.getChildren().add(horizontalLegend);
 
@@ -125,6 +130,8 @@ public class Clock extends Pane {
 				double value = newValue.doubleValue();
 				clockChart.setWidth(value);
 				horizontalLegend.setWidth(value);
+				fontSizeManager.nodeResized(clockChart, value, clockChart.getHeight());
+				fontSizeManager.nodeResized(horizontalLegend, value, horizontalLegend.getHeight());
 			}
 		});
 
@@ -132,8 +139,12 @@ public class Clock extends Pane {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
-				clockChart.setHeight(value * (1 - HORIZONTAL_LEGEND_PART));
-				horizontalLegend.setHeight(value * HORIZONTAL_LEGEND_PART);
+				double newClockChartHeight = value * (1 - HORIZONTAL_LEGEND_PART);
+				double newLegendHeight = value * HORIZONTAL_LEGEND_PART;
+				clockChart.setHeight(newClockChartHeight);
+				horizontalLegend.setHeight(newLegendHeight);
+				fontSizeManager.nodeResized(clockChart, clockChart.getWidth(), newClockChartHeight);
+				fontSizeManager.nodeResized(horizontalLegend, clockChart.getWidth(), newLegendHeight);
 			}
 		});
 
@@ -156,9 +167,13 @@ public class Clock extends Pane {
 		});
 	}
 
+	// newInstance
+
 	public static Clock newInstance(List<TimelineDataSet> timelineDataSets) {
 		return new Clock(timelineDataSets);
 	}
+
+	// listeners
 
 	public void addSelectionListener(IClockSelectionListener listener) {
 		selectionListeners.add(listener);

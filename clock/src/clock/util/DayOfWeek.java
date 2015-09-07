@@ -152,9 +152,6 @@ public enum DayOfWeek {
 		INDEX_TO_DAY_OF_WEEK_MAP.put(SUNDAY.getIndex(), SUNDAY);
 	}
 
-	private DayOfWeek() {
-	}
-
 	@Override
 	public abstract String toString();
 
