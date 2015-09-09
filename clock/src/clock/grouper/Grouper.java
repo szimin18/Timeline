@@ -9,7 +9,7 @@ import java.util.Map;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineChartData;
 import model.event.TimelineEvent;
-import clock.util.DayOfWeek;
+import clock.model.DayOfWeek;
 
 public final class Grouper {
 	private Grouper() {

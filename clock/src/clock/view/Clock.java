@@ -10,8 +10,8 @@ import java.util.TreeSet;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineChartData;
 import model.event.TimelineEvent;
@@ -20,9 +20,10 @@ import clock.grouper.Grouper;
 import clock.grouper.QuantityLeveler;
 import clock.grouper.QuantityLeveler.QuantityLevel;
 import clock.grouper.QuantityLeveler.QuantityLevelProvider;
-import clock.legend.HorizontalLegend;
+import clock.legend.Legend;
 import clock.legend.Legend.LegendEntry;
-import clock.util.DayOfWeek;
+import clock.legend.VerticalLegend;
+import clock.model.DayOfWeek;
 import clock.view.chart.ClockChart;
 import clock.view.chart.ClockChart.ClockChartSelectionEvent;
 import clock.view.chart.ClockChart.ClockChartSliceDescriptor;
@@ -44,13 +45,15 @@ public class Clock extends Pane {
 
 	private static final double HORIZONTAL_LEGEND_PART = 1.0 / 8.0;
 
+	private static final double VERTICAL_LEGEND_PART = 1.0 / 7.0;
+
 	private final List<IClockSelectionListener> selectionListeners = new ArrayList<>();
 
 	private Map<DayOfWeek, Map<Integer, TimelineChartData>> groupedData;
 
 	private Clock(List<TimelineDataSet> timelineDataSets) {
 
-		final VBox vBox = new VBox();
+		final HBox box = new HBox();
 
 		// fontSizeManager
 
@@ -80,7 +83,7 @@ public class Clock extends Pane {
 
 		final ClockChart clockChart = new ClockChart(groupedData, quantityLevelProvider);
 
-		vBox.getChildren().add(clockChart);
+		box.getChildren().add(clockChart);
 
 		clockChart.addClockChartListener(new IClockChartListener() {
 			@Override
@@ -116,35 +119,46 @@ public class Clock extends Pane {
 					.getColorForValue(quantityLevel.getLevelValue())));
 		}
 
-		final HorizontalLegend horizontalLegend = new HorizontalLegend(legendEntries);
+		final Legend legend = new VerticalLegend(legendEntries);
 
-		vBox.getChildren().add(horizontalLegend);
+		box.getChildren().add(legend);
 
 		// management
 
-		getChildren().add(vBox);
+		getChildren().add(box);
 
-		vBox.widthProperty().addListener(new ChangeListener<Number>() {
+		box.widthProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
-				clockChart.setWidth(value);
-				horizontalLegend.setWidth(value);
-				fontSizeManager.nodeResized(clockChart, value, clockChart.getHeight());
-				fontSizeManager.nodeResized(horizontalLegend, value, horizontalLegend.getHeight());
+
+				double newClockChartWidth = value * (1 - VERTICAL_LEGEND_PART);
+				double newLegendWidth = value * VERTICAL_LEGEND_PART;
+				// double newClockChartWidth = value;
+				// double newLegendWidth = value;
+
+				clockChart.setWidth(newClockChartWidth);
+				legend.setWidth(newLegendWidth);
+				fontSizeManager.nodeResized(clockChart, newClockChartWidth, clockChart.getHeight());
+				fontSizeManager.nodeResized(legend, newLegendWidth, legend.getHeight());
 			}
 		});
 
-		vBox.heightProperty().addListener(new ChangeListener<Number>() {
+		box.heightProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
-				double newClockChartHeight = value * (1 - HORIZONTAL_LEGEND_PART);
-				double newLegendHeight = value * HORIZONTAL_LEGEND_PART;
+
+				double newClockChartHeight = value;
+				double newLegendHeight = value;
+				// double newClockChartHeight = value * (1 -
+				// HORIZONTAL_LEGEND_PART);
+				// double newLegendHeight = value * HORIZONTAL_LEGEND_PART;
+
 				clockChart.setHeight(newClockChartHeight);
-				horizontalLegend.setHeight(newLegendHeight);
+				legend.setHeight(newLegendHeight);
 				fontSizeManager.nodeResized(clockChart, clockChart.getWidth(), newClockChartHeight);
-				fontSizeManager.nodeResized(horizontalLegend, clockChart.getWidth(), newLegendHeight);
+				fontSizeManager.nodeResized(legend, legend.getWidth(), newLegendHeight);
 			}
 		});
 
@@ -152,8 +166,8 @@ public class Clock extends Pane {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
-				vBox.setMinWidth(value);
-				vBox.setMaxWidth(value);
+				box.setMinWidth(value);
+				box.setMaxWidth(value);
 			}
 		});
 
@@ -161,8 +175,8 @@ public class Clock extends Pane {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
-				vBox.setMinHeight(value);
-				vBox.setMaxHeight(value);
+				box.setMinHeight(value);
+				box.setMaxHeight(value);
 			}
 		});
 	}

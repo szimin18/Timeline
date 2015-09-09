@@ -2,6 +2,9 @@ package clock.legend;
 
 import java.util.List;
 
+import com.sun.javafx.tk.FontLoader;
+import com.sun.javafx.tk.Toolkit;
+
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.canvas.Canvas;
@@ -10,6 +13,10 @@ import javafx.scene.paint.Color;
 import clock.view.font.IFontSizeNode;
 
 public abstract class Legend extends Canvas implements IFontSizeNode {
+	protected static final FontLoader FONT_LOADER = Toolkit.getToolkit().getFontLoader();
+	
+	protected static final double MARGIN = 5.0;
+	
 	private final List<LegendEntry> legendEntries;
 
 	private final GraphicsContext graphicsContext = getGraphicsContext2D();

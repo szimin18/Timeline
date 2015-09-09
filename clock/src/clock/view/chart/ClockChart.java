@@ -28,7 +28,7 @@ import model.event.TimelineChartData;
 import clock.color.HeatMapColorProvider;
 import clock.grouper.QuantityLeveler.QuantityLevel;
 import clock.grouper.QuantityLeveler.QuantityLevelProvider;
-import clock.util.DayOfWeek;
+import clock.model.DayOfWeek;
 import clock.view.font.FontSizeManager;
 import clock.view.font.IFontSizeNode;
 

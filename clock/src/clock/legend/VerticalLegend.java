@@ -12,10 +12,10 @@ import clock.view.font.FontSizeManager;
 import com.google.common.collect.Maps;
 import com.sun.javafx.tk.FontMetrics;
 
-public final class HorizontalLegend extends Legend {
+public final class VerticalLegend extends Legend {
 	private final Map<Double, Dimension2D> minimumChartSizes = Maps.newHashMap();
 
-	public HorizontalLegend(List<LegendEntry> legendEntries) {
+	public VerticalLegend(List<LegendEntry> legendEntries) {
 		super(legendEntries);
 
 		for (double fontSize = FontSizeManager.MAX_FONT_SIZE; fontSize >= 0; fontSize -= FontSizeManager.FONT_SIZE_DELTA) {
@@ -23,13 +23,17 @@ public final class HorizontalLegend extends Legend {
 
 			double lineHeight = fontMetrics.getLineHeight();
 
-			double totalWidth = Math.max(0, getLegendEntries().size() * lineHeight * 4 - lineHeight);
+			double totalHeight = Math.max(2 * getLegendEntries().size() - 1, 0) * lineHeight * 3 / 2;
+
+			double totalWidth = 0.0;
 
 			for (LegendEntry legendEntry : getLegendEntries()) {
-				totalWidth += fontMetrics.computeStringWidth(legendEntry.getDescription());
+				totalWidth = Math.max(totalWidth, fontMetrics.computeStringWidth(legendEntry.getDescription()));
 			}
 
-			minimumChartSizes.put(fontSize, new Dimension2D(2 * MARGIN + totalWidth, 2 * MARGIN + lineHeight));
+			totalWidth += 3 * lineHeight;
+
+			minimumChartSizes.put(fontSize, new Dimension2D(2 * MARGIN + totalWidth, 2 * MARGIN + totalHeight));
 		}
 	}
 
@@ -60,25 +64,23 @@ public final class HorizontalLegend extends Legend {
 		graphicsContext.setFont(font);
 		graphicsContext.setStroke(Color.BLACK);
 
-		double currentXPosition = (getWidth() - minimumChartSizes.get(fontSize).getWidth()) / 2;
-		double marginForText = MARGIN + lineHeight;
+		double marginForText = MARGIN + 3 * lineHeight;
+		double currentYPosition = (getHeight() - minimumChartSizes.get(fontSize).getHeight()) / 2;
 
 		for (LegendEntry legendEntry : getLegendEntries()) {
 			String legendEntryDescription = legendEntry.getDescription();
 
 			graphicsContext.setFill(legendEntry.getColor());
 
-			graphicsContext.fillRect(currentXPosition, MARGIN, lineHeight * 2, lineHeight * 3 / 2);
-			graphicsContext.strokeRect(currentXPosition, MARGIN, lineHeight * 2, lineHeight * 3 / 2);
-
-			currentXPosition += 3 * lineHeight;
+			graphicsContext.fillRect(MARGIN, currentYPosition, lineHeight * 2, lineHeight * 3 / 2);
+			graphicsContext.strokeRect(MARGIN, currentYPosition, lineHeight * 2, lineHeight * 3 / 2);
 
 			graphicsContext.setFill(Color.BLACK);
 
-			graphicsContext.fillText(legendEntryDescription, currentXPosition, marginForText);
-			graphicsContext.strokeText(legendEntryDescription, currentXPosition, marginForText);
+			graphicsContext.fillText(legendEntryDescription, marginForText, currentYPosition + lineHeight);
+			graphicsContext.strokeText(legendEntryDescription, marginForText, currentYPosition + lineHeight);
 
-			currentXPosition += lineHeight + fontMetrics.computeStringWidth(legendEntryDescription);
+			currentYPosition += 3 * lineHeight;
 		}
 	}
 }

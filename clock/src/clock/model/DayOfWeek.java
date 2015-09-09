@@ -1,4 +1,4 @@
-package clock.util;
+package clock.model;
 
 import java.util.ArrayList;
 import java.util.Calendar;
