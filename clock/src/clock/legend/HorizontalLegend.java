@@ -1,24 +1,20 @@
 package clock.legend;
 
 import java.util.List;
-import java.util.Map;
 
 import javafx.geometry.Dimension2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import clock.view.font.FontSizeManager;
+import clock.view.font.MinimumSizeManager;
 
-import com.google.common.collect.Maps;
+import com.google.common.base.Function;
 import com.sun.javafx.tk.FontMetrics;
 
 public final class HorizontalLegend extends Legend {
-	private final Map<Double, Dimension2D> minimumChartSizes = Maps.newHashMap();
-
-	public HorizontalLegend(List<LegendEntry> legendEntries) {
-		super(legendEntries);
-
-		for (double fontSize = FontSizeManager.MAX_FONT_SIZE; fontSize >= 0; fontSize -= FontSizeManager.FONT_SIZE_DELTA) {
+	private final MinimumSizeManager minimumSizeManager = new MinimumSizeManager(new Function<Double, Dimension2D>() {
+		@Override
+		public Dimension2D apply(Double fontSize) {
 			FontMetrics fontMetrics = FONT_LOADER.getFontMetrics(new Font(fontSize));
 
 			double lineHeight = fontMetrics.getLineHeight();
@@ -29,22 +25,17 @@ public final class HorizontalLegend extends Legend {
 				totalWidth += fontMetrics.computeStringWidth(legendEntry.getDescription());
 			}
 
-			minimumChartSizes.put(fontSize, new Dimension2D(2 * MARGIN + totalWidth, 2 * MARGIN + lineHeight));
+			return new Dimension2D(2 * MARGIN + totalWidth, 2 * MARGIN + lineHeight * 3 / 2);
 		}
+	});
+
+	public HorizontalLegend(List<LegendEntry> legendEntries) {
+		super(legendEntries);
 	}
 
 	@Override
-	public double getMaximumFontSize(double width, double height) {
-		for (double currentFontSize = FontSizeManager.MAX_FONT_SIZE;; currentFontSize -= FontSizeManager.FONT_SIZE_DELTA) {
-			if (currentFontSize <= FontSizeManager.MIN_FONT_SIZE) {
-				return currentFontSize;
-			}
-
-			Dimension2D minimumSize = minimumChartSizes.get(currentFontSize);
-			if (width >= minimumSize.getWidth() && height >= minimumSize.getHeight()) {
-				return currentFontSize;
-			}
-		}
+	public MinimumSizeManager getMinimumSizeManager() {
+		return minimumSizeManager;
 	}
 
 	@Override
@@ -60,7 +51,7 @@ public final class HorizontalLegend extends Legend {
 		graphicsContext.setFont(font);
 		graphicsContext.setStroke(Color.BLACK);
 
-		double currentXPosition = (getWidth() - minimumChartSizes.get(fontSize).getWidth()) / 2;
+		double currentXPosition = (getWidth() - minimumSizeManager.getMinimumSize(fontSize).getWidth()) / 2;
 		double marginForText = MARGIN + lineHeight;
 
 		for (LegendEntry legendEntry : getLegendEntries()) {

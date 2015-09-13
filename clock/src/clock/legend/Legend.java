@@ -2,21 +2,22 @@ package clock.legend;
 
 import java.util.List;
 
-import com.sun.javafx.tk.FontLoader;
-import com.sun.javafx.tk.Toolkit;
-
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import clock.view.font.IFontSizeNode;
+import clock.view.font.IFontSizeBasedNode;
 
-public abstract class Legend extends Canvas implements IFontSizeNode {
+import com.sun.javafx.tk.FontLoader;
+import com.sun.javafx.tk.Toolkit;
+
+public abstract class Legend extends Canvas implements IFontSizeBasedNode {
 	protected static final FontLoader FONT_LOADER = Toolkit.getToolkit().getFontLoader();
-	
+
 	protected static final double MARGIN = 5.0;
-	
+
 	private final List<LegendEntry> legendEntries;
 
 	private final GraphicsContext graphicsContext = getGraphicsContext2D();
@@ -38,18 +39,18 @@ public abstract class Legend extends Canvas implements IFontSizeNode {
 	}
 
 	@Override
-	public void setFontSize(double newFontSize) {
-		boolean redraw = false;
-
-		if (fontSize != newFontSize) {
-			redraw = true;
-		}
-
+	public void setSize(double newWidth, double newHeight, double newFontSize) {
 		fontSize = newFontSize;
 
-		if (redraw) {
-			drawFrame(graphicsContext);
-		}
+		setWidth(newWidth);
+		setHeight(newHeight);
+
+		drawFrame(graphicsContext);
+	}
+
+	@Override
+	public Node getNode() {
+		return this;
 	}
 
 	protected List<LegendEntry> getLegendEntries() {

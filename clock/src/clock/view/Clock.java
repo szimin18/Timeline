@@ -6,11 +6,11 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineChartData;
@@ -28,24 +28,15 @@ import clock.view.chart.ClockChart;
 import clock.view.chart.ClockChart.ClockChartSelectionEvent;
 import clock.view.chart.ClockChart.ClockChartSliceDescriptor;
 import clock.view.chart.ClockChart.IClockChartListener;
-import clock.view.font.FontSizeManager;
+import clock.view.size.SizeManagingPane;
 
-/*
- * TODO
- * 
- * - add vertical legend with switch
- * - enhance all sizes (bind radius and font size)
- * 
- */
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 
 public class Clock extends Pane {
 	private static final double CHART_HEAT_MINIMUM_VALUE = 0.0;
 
 	private static final double CHART_HEAT_MAXIMUM_VALUE = 1.0;
-
-	private static final double HORIZONTAL_LEGEND_PART = 1.0 / 8.0;
-
-	private static final double VERTICAL_LEGEND_PART = 1.0 / 7.0;
 
 	private final List<IClockSelectionListener> selectionListeners = new ArrayList<>();
 
@@ -53,37 +44,25 @@ public class Clock extends Pane {
 
 	private Clock(List<TimelineDataSet> timelineDataSets) {
 
-		final HBox box = new HBox();
-
-		// fontSizeManager
-
-		final FontSizeManager fontSizeManager = new FontSizeManager();
-
 		// clockChart
 
 		groupedData = Grouper.group(timelineDataSets);
 
-		int minimumEventsCount = Integer.MAX_VALUE;
-		int maximumEventsCount = 0;
+		Set<Integer> allEventsCounts = Sets.newHashSet();
 
 		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
 			for (int hour = 0; hour < 24; hour++) {
-				int eventsCount = groupedData.get(dayOfWeek).get(hour).getEventsCount();
-				if (eventsCount < minimumEventsCount) {
-					minimumEventsCount = eventsCount;
-				}
-				if (eventsCount > maximumEventsCount) {
-					maximumEventsCount = eventsCount;
-				}
+				allEventsCounts.add(groupedData.get(dayOfWeek).get(hour).getEventsCount());
 			}
 		}
+
+		int minimumEventsCount = Ordering.natural().min(allEventsCounts);
+		int maximumEventsCount = Ordering.natural().max(allEventsCounts);
 
 		QuantityLevelProvider quantityLevelProvider = QuantityLeveler.getQuantityLevelProvider(
 				CHART_HEAT_MINIMUM_VALUE, CHART_HEAT_MAXIMUM_VALUE, minimumEventsCount, maximumEventsCount);
 
 		final ClockChart clockChart = new ClockChart(groupedData, quantityLevelProvider);
-
-		box.getChildren().add(clockChart);
 
 		clockChart.addClockChartListener(new IClockChartListener() {
 			@Override
@@ -121,53 +100,18 @@ public class Clock extends Pane {
 
 		final Legend legend = new VerticalLegend(legendEntries);
 
-		box.getChildren().add(legend);
+		// top pane
 
-		// management
+		final SizeManagingPane sizeManagingPane = new SizeManagingPane(clockChart, legend);
 
-		getChildren().add(box);
-
-		box.widthProperty().addListener(new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				double value = newValue.doubleValue();
-
-				double newClockChartWidth = value * (1 - VERTICAL_LEGEND_PART);
-				double newLegendWidth = value * VERTICAL_LEGEND_PART;
-				// double newClockChartWidth = value;
-				// double newLegendWidth = value;
-
-				clockChart.setWidth(newClockChartWidth);
-				legend.setWidth(newLegendWidth);
-				fontSizeManager.nodeResized(clockChart, newClockChartWidth, clockChart.getHeight());
-				fontSizeManager.nodeResized(legend, newLegendWidth, legend.getHeight());
-			}
-		});
-
-		box.heightProperty().addListener(new ChangeListener<Number>() {
-			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-				double value = newValue.doubleValue();
-
-				double newClockChartHeight = value;
-				double newLegendHeight = value;
-				// double newClockChartHeight = value * (1 -
-				// HORIZONTAL_LEGEND_PART);
-				// double newLegendHeight = value * HORIZONTAL_LEGEND_PART;
-
-				clockChart.setHeight(newClockChartHeight);
-				legend.setHeight(newLegendHeight);
-				fontSizeManager.nodeResized(clockChart, clockChart.getWidth(), newClockChartHeight);
-				fontSizeManager.nodeResized(legend, legend.getWidth(), newLegendHeight);
-			}
-		});
+		getChildren().add(sizeManagingPane);
 
 		widthProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
-				box.setMinWidth(value);
-				box.setMaxWidth(value);
+				sizeManagingPane.setMinWidth(value);
+				sizeManagingPane.setMaxWidth(value);
 			}
 		});
 
@@ -175,8 +119,8 @@ public class Clock extends Pane {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				double value = newValue.doubleValue();
-				box.setMinHeight(value);
-				box.setMaxHeight(value);
+				sizeManagingPane.setMinHeight(value);
+				sizeManagingPane.setMaxHeight(value);
 			}
 		});
 	}

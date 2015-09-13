@@ -11,6 +11,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
 import javafx.geometry.Dimension2D;
+import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
@@ -29,15 +30,16 @@ import clock.color.HeatMapColorProvider;
 import clock.grouper.QuantityLeveler.QuantityLevel;
 import clock.grouper.QuantityLeveler.QuantityLevelProvider;
 import clock.model.DayOfWeek;
-import clock.view.font.FontSizeManager;
-import clock.view.font.IFontSizeNode;
+import clock.view.font.IFontSizeBasedNode;
+import clock.view.font.MinimumSizeManager;
 
+import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.FontMetrics;
 import com.sun.javafx.tk.Toolkit;
 
-public class ClockChart extends Canvas implements IFontSizeNode {
+public class ClockChart extends Canvas implements IFontSizeBasedNode {
 	private static final double SLICE_RADIUS_RATIO = 1.0 / 9.0;
 
 	// private static final double TOP_BOTTOM_MARGIN = 13.0;
@@ -102,23 +104,23 @@ public class ClockChart extends Canvas implements IFontSizeNode {
 		LONGEST_DAY_OF_WEEK_NAME = longestDayOfWeekName;
 	}
 
-	private static final Map<Double, Dimension2D> MINIMUM_CHART_SIZES = Maps.newHashMap();
+	private static final MinimumSizeManager MINIMUM_SIZE_MANAGER = new MinimumSizeManager(
+			new Function<Double, Dimension2D>() {
+				@Override
+				public Dimension2D apply(Double fontSize) {
+					Font font = new Font(fontSize);
 
-	static {
-		for (double fontSize = FontSizeManager.MAX_FONT_SIZE; fontSize >= 0; fontSize -= FontSizeManager.FONT_SIZE_DELTA) {
-			Font font = new Font(fontSize);
+					double longestNameLength = FONT_LOADER.computeStringWidth(LONGEST_DAY_OF_WEEK_NAME, font);
+					double longestNameHeight = FONT_LOADER.getFontMetrics(font).getLineHeight();
 
-			double longestNameLength = FONT_LOADER.computeStringWidth(LONGEST_DAY_OF_WEEK_NAME, font);
-			double longestNameHeight = FONT_LOADER.getFontMetrics(font).getLineHeight();
+					double chartRadius = longestNameLength / MAXIMUM_TEXT_IN_RADIUS_RATIO;
 
-			double chartRadius = longestNameLength / MAXIMUM_TEXT_IN_RADIUS_RATIO;
+					double chartWidth = 2 * chartRadius + 2 * longestNameLength;
+					double chartHeight = 2 * chartRadius + 2 * longestNameHeight;
 
-			double chartWidth = 2 * chartRadius + 2 * longestNameLength;
-			double chartHeight = 2 * chartRadius + 2 * longestNameHeight;
-
-			MINIMUM_CHART_SIZES.put(fontSize, new Dimension2D(chartWidth, chartHeight));
-		}
-	}
+					return new Dimension2D(chartWidth, chartHeight);
+				}
+			});
 
 	private final List<IClockChartListener> clockChartListeners = new ArrayList<>();
 
@@ -679,34 +681,25 @@ public class ClockChart extends Canvas implements IFontSizeNode {
 	private static double getOffsetCosineForHour(int hour) {
 		return OFFSET_COSINE_FOR_HOUR.get(hour);
 	}
-
+	
 	@Override
-	public void setFontSize(double newFontSize) {
-		boolean recalculate = false;
-
-		if (fontSize != newFontSize) {
-			recalculate = true;
-		}
-
+	public Node getNode() {
+		return this;
+	}
+	
+	@Override
+	public void setSize(double newWidth, double newHeight, double newFontSize) {
 		fontSize = newFontSize;
 
-		if (recalculate) {
-			recalculateRadius();
-		}
+		setWidth(newWidth);
+		setHeight(newHeight);
+
+		drawFrame();
 	}
 
 	@Override
-	public double getMaximumFontSize(double width, double height) {
-		for (double currentFontSize = FontSizeManager.MAX_FONT_SIZE;; currentFontSize -= FontSizeManager.FONT_SIZE_DELTA) {
-			if (currentFontSize <= FontSizeManager.MIN_FONT_SIZE) {
-				return currentFontSize;
-			}
-
-			Dimension2D minimumSize = MINIMUM_CHART_SIZES.get(currentFontSize);
-			if (width >= minimumSize.getWidth() && height >= minimumSize.getHeight()) {
-				return currentFontSize;
-			}
-		}
+	public MinimumSizeManager getMinimumSizeManager() {
+		return MINIMUM_SIZE_MANAGER;
 	}
 
 	private void notifyClockChartListeners() {
