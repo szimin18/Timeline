@@ -42,10 +42,6 @@ import com.sun.javafx.tk.Toolkit;
 public class ClockChart extends Canvas implements ISizeManagedNode {
 	private static final double SLICE_RADIUS_RATIO = 1.0 / 9.0;
 
-	// private static final double TOP_BOTTOM_MARGIN = 13.0;
-	//
-	// private static final double SIDES_MARGIN = 33.0;
-
 	private static final double CURSOR_WIDTH = 15.0;
 
 	private static final double CURSOR_HEIGHT = 20.0;

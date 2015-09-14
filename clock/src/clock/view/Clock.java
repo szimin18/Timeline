@@ -28,7 +28,6 @@ import clock.view.chart.ClockChart;
 import clock.view.chart.ClockChart.ClockChartSelectionEvent;
 import clock.view.chart.ClockChart.ClockChartSliceDescriptor;
 import clock.view.chart.ClockChart.IClockChartListener;
-import clock.view.size.ISizeManagedNode;
 import clock.view.size.SizeManagingPane;
 import clock.view.size.layout.HorizontalLayout;
 import clock.view.size.layout.ISizeManagedLayout;
