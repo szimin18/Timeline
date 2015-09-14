@@ -30,8 +30,8 @@ import clock.color.HeatMapColorProvider;
 import clock.grouper.QuantityLeveler.QuantityLevel;
 import clock.grouper.QuantityLeveler.QuantityLevelProvider;
 import clock.model.DayOfWeek;
-import clock.view.font.IFontSizeBasedNode;
-import clock.view.font.MinimumSizeManager;
+import clock.view.size.ISizeManagedNode;
+import clock.view.size.MinimumSizeManager;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
@@ -39,7 +39,7 @@ import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.FontMetrics;
 import com.sun.javafx.tk.Toolkit;
 
-public class ClockChart extends Canvas implements IFontSizeBasedNode {
+public class ClockChart extends Canvas implements ISizeManagedNode {
 	private static final double SLICE_RADIUS_RATIO = 1.0 / 9.0;
 
 	// private static final double TOP_BOTTOM_MARGIN = 13.0;
@@ -681,12 +681,12 @@ public class ClockChart extends Canvas implements IFontSizeBasedNode {
 	private static double getOffsetCosineForHour(int hour) {
 		return OFFSET_COSINE_FOR_HOUR.get(hour);
 	}
-	
+
 	@Override
-	public Node getNode() {
+	public Node getTopNode() {
 		return this;
 	}
-	
+
 	@Override
 	public void setSize(double newWidth, double newHeight, double newFontSize) {
 		fontSize = newFontSize;
@@ -698,8 +698,8 @@ public class ClockChart extends Canvas implements IFontSizeBasedNode {
 	}
 
 	@Override
-	public MinimumSizeManager getMinimumSizeManager() {
-		return MINIMUM_SIZE_MANAGER;
+	public Dimension2D getMinimumSize(double fontSize) {
+		return MINIMUM_SIZE_MANAGER.getMinimumSize(fontSize);
 	}
 
 	private void notifyClockChartListeners() {

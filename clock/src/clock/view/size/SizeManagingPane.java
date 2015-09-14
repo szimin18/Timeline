@@ -5,26 +5,19 @@ import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Dimension2D;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import clock.view.font.IFontSizeBasedNode;
-import clock.view.font.MinimumSizeManager;
+import clock.view.size.layout.ISizeManagedLayout;
 
 import com.google.common.collect.Lists;
 
 public class SizeManagingPane extends StackPane {
-	private final List<IFontSizeBasedNode> fontSizeBasedNodes = Lists.newArrayList();
-	private final Pane box;
+	private final List<ISizeManagedLayout> alternativeLayouts = Lists.newArrayList();
 
-	public SizeManagingPane(IFontSizeBasedNode... fontSizeBasedNodes) {
-		box = new HBox();
+	private ISizeManagedLayout activeLayout = null;
 
-		getChildren().add(box);
-
-		for (IFontSizeBasedNode fontSizeBasedNode : fontSizeBasedNodes) {
-			this.fontSizeBasedNodes.add(fontSizeBasedNode);
-			box.getChildren().add(fontSizeBasedNode.getNode());
+	public SizeManagingPane(ISizeManagedLayout... alternativeLayouts) {
+		for (ISizeManagedLayout alternativeLayout : alternativeLayouts) {
+			this.alternativeLayouts.add(alternativeLayout);
 		}
 
 		ChangeListener<Number> sizeChangeListener = new ChangeListener<Number>() {
@@ -39,47 +32,48 @@ public class SizeManagingPane extends StackPane {
 	}
 
 	private void drawFrame() {
-		double fontSize = getMaximumCommonFontSize(getWidth(), getHeight());
+		double width = getWidth();
+		double height = getHeight();
 
-		double sumWidth = 0;
-		double sumHeight = 0;
+		double biggestFontSize = MinimumSizeManager.MIN_FONT_SIZE;
+		ISizeManagedLayout biggestFontSizeLayout = null;
 
-		for (IFontSizeBasedNode fontSizeBasedNode : fontSizeBasedNodes) {
-			Dimension2D minimumSize = fontSizeBasedNode.getMinimumSizeManager().getMinimumSize(fontSize);
+		for (ISizeManagedLayout layout : alternativeLayouts) {
+			double fontSize = getMaximumFontSize(layout, width, height);
 
-			sumWidth += minimumSize.getWidth();
-			sumHeight = Math.max(sumHeight, minimumSize.getHeight());
+			if (fontSize > biggestFontSize) {
+				biggestFontSize = fontSize;
+				biggestFontSizeLayout = layout;
+			}
 		}
 
-		box.setMinWidth(sumWidth);
-		box.setMaxWidth(sumWidth);
-		box.setMinHeight(sumHeight);
-		box.setMaxHeight(sumHeight);
-
-		for (IFontSizeBasedNode fontSizeBasedNode : fontSizeBasedNodes) {
-			Dimension2D size = fontSizeBasedNode.getMinimumSizeManager().getMinimumSize(fontSize);
-
-			fontSizeBasedNode.setSize(size.getWidth(), sumHeight, fontSize);
+		if (activeLayout != null) {
+			activeLayout.setActive(false);
 		}
+
+		getChildren().clear();
+
+		if (biggestFontSizeLayout == null) {
+			biggestFontSizeLayout = alternativeLayouts.get(0);
+		}
+
+		activeLayout = biggestFontSizeLayout;
+		activeLayout.setActive(true);
+		getChildren().add(activeLayout.getTopNode());
+
+		Dimension2D size = activeLayout.getMinimumSize(biggestFontSize);
+		activeLayout.setSize(size.getWidth(), size.getHeight(), biggestFontSize);
 	}
 
-	private double getMaximumCommonFontSize(double width, double height) {
+	private double getMaximumFontSize(ISizeManagedLayout alternativeNode, double width, double height) {
 		for (double fontSize = MinimumSizeManager.MAX_FONT_SIZE;; fontSize -= MinimumSizeManager.FONT_SIZE_DELTA) {
 			if (fontSize <= MinimumSizeManager.MIN_FONT_SIZE) {
 				return fontSize;
 			}
 
-			double sumWidth = 0;
-			double sumHeight = 0;
+			Dimension2D minimumSize = alternativeNode.getMinimumSize(fontSize);
 
-			for (IFontSizeBasedNode fontSizeBasedNode : fontSizeBasedNodes) {
-				Dimension2D minimumSize = fontSizeBasedNode.getMinimumSizeManager().getMinimumSize(fontSize);
-
-				sumWidth += minimumSize.getWidth();
-				sumHeight = Math.max(sumHeight, minimumSize.getHeight());
-			}
-
-			if (width >= sumWidth && height >= sumHeight) {
+			if (width >= minimumSize.getWidth() && height >= minimumSize.getHeight()) {
 				return fontSize;
 			}
 		}

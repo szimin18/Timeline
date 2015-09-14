@@ -6,7 +6,7 @@ import javafx.geometry.Dimension2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import clock.view.font.MinimumSizeManager;
+import clock.view.size.MinimumSizeManager;
 
 import com.google.common.base.Function;
 import com.sun.javafx.tk.FontMetrics;
@@ -32,10 +32,10 @@ public final class HorizontalLegend extends Legend {
 	public HorizontalLegend(List<LegendEntry> legendEntries) {
 		super(legendEntries);
 	}
-
+	
 	@Override
-	public MinimumSizeManager getMinimumSizeManager() {
-		return minimumSizeManager;
+	public Dimension2D getMinimumSize(double fontSize) {
+		return minimumSizeManager.getMinimumSize(fontSize);
 	}
 
 	@Override

@@ -20,7 +20,7 @@ import clock.grouper.Grouper;
 import clock.grouper.QuantityLeveler;
 import clock.grouper.QuantityLeveler.QuantityLevel;
 import clock.grouper.QuantityLeveler.QuantityLevelProvider;
-import clock.legend.Legend;
+import clock.legend.HorizontalLegend;
 import clock.legend.Legend.LegendEntry;
 import clock.legend.VerticalLegend;
 import clock.model.DayOfWeek;
@@ -28,7 +28,11 @@ import clock.view.chart.ClockChart;
 import clock.view.chart.ClockChart.ClockChartSelectionEvent;
 import clock.view.chart.ClockChart.ClockChartSliceDescriptor;
 import clock.view.chart.ClockChart.IClockChartListener;
+import clock.view.size.ISizeManagedNode;
 import clock.view.size.SizeManagingPane;
+import clock.view.size.layout.HorizontalLayout;
+import clock.view.size.layout.ISizeManagedLayout;
+import clock.view.size.layout.VerticalLayout;
 
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
@@ -98,11 +102,14 @@ public class Clock extends Pane {
 					.getColorForValue(quantityLevel.getLevelValue())));
 		}
 
-		final Legend legend = new VerticalLegend(legendEntries);
+		final HorizontalLegend horizontalLegend = new HorizontalLegend(legendEntries);
+		final VerticalLegend verticalLegend = new VerticalLegend(legendEntries);
 
 		// top pane
 
-		final SizeManagingPane sizeManagingPane = new SizeManagingPane(clockChart, legend);
+		ISizeManagedLayout horizontalLayout = new HorizontalLayout(clockChart, verticalLegend);
+		ISizeManagedLayout verticalLayout = new VerticalLayout(clockChart, horizontalLegend);
+		final SizeManagingPane sizeManagingPane = new SizeManagingPane(verticalLayout, horizontalLayout);
 
 		getChildren().add(sizeManagingPane);
 

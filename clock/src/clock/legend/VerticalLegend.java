@@ -6,7 +6,7 @@ import javafx.geometry.Dimension2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import clock.view.font.MinimumSizeManager;
+import clock.view.size.MinimumSizeManager;
 
 import com.google.common.base.Function;
 import com.sun.javafx.tk.FontMetrics;
@@ -38,8 +38,8 @@ public final class VerticalLegend extends Legend {
 	}
 
 	@Override
-	public MinimumSizeManager getMinimumSizeManager() {
-		return minimumSizeManager;
+	public Dimension2D getMinimumSize(double fontSize) {
+		return minimumSizeManager.getMinimumSize(fontSize);
 	}
 
 	@Override
@@ -48,7 +48,7 @@ public final class VerticalLegend extends Legend {
 
 		double fontSize = getFontSize();
 		Font font = new Font(fontSize);
-		
+
 		double lineHeight = FONT_LOADER.getFontMetrics(font).getLineHeight();
 
 		graphicsContext.setFont(font);

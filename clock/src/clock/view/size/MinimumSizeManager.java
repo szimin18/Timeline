@@ -1,4 +1,4 @@
-package clock.view.font;
+package clock.view.size;
 
 import java.util.Map;
 

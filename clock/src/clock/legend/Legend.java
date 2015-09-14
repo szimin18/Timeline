@@ -8,12 +8,12 @@ import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import clock.view.font.IFontSizeBasedNode;
+import clock.view.size.ISizeManagedNode;
 
 import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.Toolkit;
 
-public abstract class Legend extends Canvas implements IFontSizeBasedNode {
+public abstract class Legend extends Canvas implements ISizeManagedNode {
 	protected static final FontLoader FONT_LOADER = Toolkit.getToolkit().getFontLoader();
 
 	protected static final double MARGIN = 5.0;
@@ -49,7 +49,7 @@ public abstract class Legend extends Canvas implements IFontSizeBasedNode {
 	}
 
 	@Override
-	public Node getNode() {
+	public Node getTopNode() {
 		return this;
 	}
 
