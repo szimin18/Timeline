@@ -1,9 +1,7 @@
 package clock.view;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,9 +10,9 @@ import java.util.TreeSet;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import model.dataset.TimelineDataSet;
 import model.event.TimelineChartData;
-import model.event.TimelineEvent;
 import clock.color.HeatMapColorProvider;
 import clock.grouper.Grouper;
 import clock.grouper.QuantityLeveler;
@@ -23,11 +21,11 @@ import clock.grouper.QuantityLeveler.QuantityLevelProvider;
 import clock.legend.HorizontalLegend;
 import clock.legend.Legend.LegendEntry;
 import clock.legend.VerticalLegend;
-import clock.model.DayOfWeek;
+import clock.model.SliceDescriptor;
 import clock.view.chart.ClockChart;
 import clock.view.chart.ClockChart.ClockChartSelectionEvent;
-import clock.view.chart.ClockChart.ClockChartSliceDescriptor;
 import clock.view.chart.ClockChart.IClockChartListener;
+import clock.view.event.ClockSelectionEvent;
 import clock.view.size.SizeManagingPane;
 import clock.view.size.layout.HorizontalLayout;
 import clock.view.size.layout.ISizeManagedLayout;
@@ -36,14 +34,14 @@ import clock.view.size.layout.VerticalLayout;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 
-public class Clock extends Pane {
+public final class Clock extends Pane {
 	private static final double CHART_HEAT_MINIMUM_VALUE = 0.0;
 
 	private static final double CHART_HEAT_MAXIMUM_VALUE = 1.0;
 
 	private final List<IClockSelectionListener> selectionListeners = new ArrayList<>();
 
-	private Map<DayOfWeek, Map<Integer, TimelineChartData>> groupedData;
+	private Map<SliceDescriptor, TimelineChartData> groupedData;
 
 	private Clock(List<TimelineDataSet> timelineDataSets) {
 
@@ -53,10 +51,8 @@ public class Clock extends Pane {
 
 		Set<Integer> allEventsCounts = Sets.newHashSet();
 
-		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
-			for (int hour = 0; hour < 24; hour++) {
-				allEventsCounts.add(groupedData.get(dayOfWeek).get(hour).getEventsCount());
-			}
+		for (TimelineChartData timelineChartData : groupedData.values()) {
+			allEventsCounts.add(timelineChartData.getEventsCount());
 		}
 
 		int minimumEventsCount = Ordering.natural().min(allEventsCounts);
@@ -70,7 +66,7 @@ public class Clock extends Pane {
 		clockChart.addClockChartListener(new IClockChartListener() {
 			@Override
 			public void selectionChanged(ClockChartSelectionEvent chartEvent) {
-				ClockSelectionEvent event = new ClockSelectionEvent(chartEvent);
+				ClockSelectionEvent event = new ClockSelectionEvent(groupedData, chartEvent.getSelectedSlices());
 
 				for (IClockSelectionListener listener : selectionListeners) {
 					listener.selectionChanged(event);
@@ -87,18 +83,16 @@ public class Clock extends Pane {
 			}
 		});
 
-		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
-			for (int hour = 0; hour < 24; hour++) {
-				allQuantityLevels.add(quantityLevelProvider.getLevelForQuantity(groupedData.get(dayOfWeek).get(hour)
-						.getEventsCount()));
-			}
+		for (SliceDescriptor sliceDescriptor : SliceDescriptor.ALL_SLICES) {
+			int eventsCount = groupedData.get(sliceDescriptor).getEventsCount();
+			allQuantityLevels.add(quantityLevelProvider.getLevelForQuantity(eventsCount));
 		}
 
 		List<LegendEntry> legendEntries = new ArrayList<>();
 
 		for (QuantityLevel quantityLevel : allQuantityLevels) {
-			legendEntries.add(new LegendEntry(quantityLevel.getLevelDescription(), HeatMapColorProvider
-					.getColorForValue(quantityLevel.getLevelValue())));
+			Color colorForQuantity = HeatMapColorProvider.getColorForValue(quantityLevel.getLevelValue());
+			legendEntries.add(new LegendEntry(quantityLevel.getLevelDescription(), colorForQuantity));
 		}
 
 		final HorizontalLegend horizontalLegend = new HorizontalLegend(legendEntries);
@@ -149,82 +143,5 @@ public class Clock extends Pane {
 
 	public static interface IClockSelectionListener {
 		public void selectionChanged(ClockSelectionEvent event);
-	}
-
-	public class ClockSelectionEvent {
-		private List<ClockChartSliceDescriptor> selectedSlices;
-
-		private ClockSelectionEvent(ClockChartSelectionEvent clockChartSelectionEvent) {
-			selectedSlices = clockChartSelectionEvent.getSelectedSlices();
-		}
-
-		public Iterable<TimelineEvent> getSelectedEvents() {
-			return new ClockEventsIterable(selectedSlices);
-		}
-
-		public boolean isSliceSelected(DayOfWeek dayOfWeek, int hour) {
-			for (ClockChartSliceDescriptor sliceDescriptor : selectedSlices) {
-				if (dayOfWeek == sliceDescriptor.getDayOfWeek() && hour == sliceDescriptor.getHour()) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		public int getSelectedEventsCount() {
-			int selectedEventsCount = 0;
-
-			for (ClockChartSliceDescriptor sliceDescriptor : selectedSlices) {
-				selectedEventsCount += groupedData.get(sliceDescriptor.getDayOfWeek()).get(sliceDescriptor.getHour())
-						.getEventsCount();
-			}
-
-			return selectedEventsCount;
-		}
-	}
-
-	private class ClockEventsIterable implements Iterable<TimelineEvent> {
-		private List<ClockChartSliceDescriptor> selectedSlices;
-
-		private ClockEventsIterable(List<ClockChartSliceDescriptor> selectedSlices) {
-			this.selectedSlices = selectedSlices;
-		}
-
-		@Override
-		public Iterator<TimelineEvent> iterator() {
-			return new Iterator<TimelineEvent>() {
-				private final Iterator<ClockChartSliceDescriptor> outerIterator = selectedSlices.iterator();
-
-				private Iterator<TimelineEvent> innerIterator = Collections.emptyIterator();
-
-				@Override
-				public void remove() {
-				}
-
-				@Override
-				public TimelineEvent next() {
-					swapIterators();
-
-					return innerIterator.next();
-				}
-
-				@Override
-				public boolean hasNext() {
-					swapIterators();
-
-					return innerIterator.hasNext();
-				}
-
-				private void swapIterators() {
-					while (!innerIterator.hasNext() && outerIterator.hasNext()) {
-						ClockChartSliceDescriptor nextSliceDescriptor = outerIterator.next();
-
-						innerIterator = groupedData.get(nextSliceDescriptor.getDayOfWeek())
-								.get(nextSliceDescriptor.getHour()).getEventsList().iterator();
-					}
-				}
-			};
-		}
-
 	}
 }

@@ -6,6 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javafx.scene.text.Font;
+
+import com.sun.javafx.tk.FontLoader;
+import com.sun.javafx.tk.FontMetrics;
+import com.sun.javafx.tk.Toolkit;
+
 public enum DayOfWeek {
 	MONDAY {
 		@Override
@@ -150,6 +156,26 @@ public enum DayOfWeek {
 		INDEX_TO_DAY_OF_WEEK_MAP.put(FRIDAY.getIndex(), FRIDAY);
 		INDEX_TO_DAY_OF_WEEK_MAP.put(SATURDAY.getIndex(), SATURDAY);
 		INDEX_TO_DAY_OF_WEEK_MAP.put(SUNDAY.getIndex(), SUNDAY);
+	}
+
+	public static final String LONGEST_DAY_OF_WEEK_NAME;
+
+	static {
+		FontLoader fontLoader = Toolkit.getToolkit().getFontLoader();
+		FontMetrics fontMetrics = fontLoader.getFontMetrics(new Font(fontLoader.getSystemFontSize()));
+
+		String longestDayOfWeekName = "";
+
+		for (DayOfWeek dayOfWeek : DayOfWeek.VALUES_LIST) {
+			String currentDayOfWeekName = dayOfWeek.getShortNameCapital();
+
+			if (fontMetrics.computeStringWidth(currentDayOfWeekName) > fontMetrics
+					.computeStringWidth(longestDayOfWeekName)) {
+				longestDayOfWeekName = currentDayOfWeekName;
+			}
+		}
+
+		LONGEST_DAY_OF_WEEK_NAME = longestDayOfWeekName;
 	}
 
 	@Override

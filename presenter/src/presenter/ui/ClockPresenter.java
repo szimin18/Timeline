@@ -11,8 +11,8 @@ import model.dataset.TimelineDataSet;
 import model.event.TimelineEvent;
 import presenter.generator.RandomDataGenerator;
 import clock.view.Clock;
-import clock.view.Clock.ClockSelectionEvent;
 import clock.view.Clock.IClockSelectionListener;
+import clock.view.event.ClockSelectionEvent;
 
 public class ClockPresenter extends Application {
 
