@@ -1,20 +1,21 @@
-package model.dataset;
+package clock.model;
 
 import java.util.List;
 
-import javafx.scene.paint.Color;
-import model.event.TimelineEvent;
-
 import com.google.common.collect.Iterables;
 
-public class TimelineDataSet {
-	private static final Color[] ALL_COLORS = new Color[] { Color.GOLD, Color.AQUA, Color.GREEN, Color.BLUE, Color.RED };
+import clock.sorter.Sorter;
+import javafx.scene.paint.Color;
+
+public class ClockDataSet {
+	private static final Color[] ALL_COLORS = new Color[] { Color.GOLD, Color.AQUA, Color.GREEN, Color.BLUE,
+			Color.RED };
 
 	private static final IDataSetColorProvider DEFAULT_DATA_SET_COLOR_PROVIDER = new IDataSetColorProvider() {
 		private int nextColorIndex = 0;
 
 		@Override
-		public Color getDataSetColor(List<TimelineEvent> unsortedEvents) {
+		public Color getDataSetColor(List<IClockEvent> unsortedEvents) {
 			Color result = ALL_COLORS[nextColorIndex];
 			nextColorIndex++;
 			nextColorIndex %= ALL_COLORS.length;
@@ -22,27 +23,27 @@ public class TimelineDataSet {
 		}
 	};
 
-	private final List<TimelineEvent> sortedEvents;
+	private final List<IClockEvent> sortedEvents;
 	private final Color color;
 
-	private TimelineDataSet(List<TimelineEvent> unsortedEvents, Color color) {
+	private ClockDataSet(List<IClockEvent> unsortedEvents, Color color) {
 		this.color = color;
 		sortedEvents = Sorter.sortEvents(unsortedEvents);
 	}
 
-	public static TimelineDataSet newInstance(List<TimelineEvent> unsortedEvents, Color color) {
-		return new TimelineDataSet(unsortedEvents, color);
+	public static ClockDataSet newInstance(List<IClockEvent> unsortedEvents, Color color) {
+		return new ClockDataSet(unsortedEvents, color);
 	}
 
-	public static TimelineDataSet newInstance(List<TimelineEvent> unsortedEvents, IDataSetColorProvider colorProvider) {
+	public static ClockDataSet newInstance(List<IClockEvent> unsortedEvents, IDataSetColorProvider colorProvider) {
 		return newInstance(unsortedEvents, colorProvider.getDataSetColor(unsortedEvents));
 	}
 
-	public static TimelineDataSet newInstance(List<TimelineEvent> unsortedEvents) {
+	public static ClockDataSet newInstance(List<IClockEvent> unsortedEvents) {
 		return newInstance(unsortedEvents, DEFAULT_DATA_SET_COLOR_PROVIDER.getDataSetColor(unsortedEvents));
 	}
 
-	public List<TimelineEvent> getSortedEvents() {
+	public List<IClockEvent> getSortedEvents() {
 		return sortedEvents;
 	}
 
@@ -73,6 +74,6 @@ public class TimelineDataSet {
 		 *            list of events which can be used for data set color
 		 *            computation
 		 */
-		public Color getDataSetColor(List<TimelineEvent> unsortedEvents);
+		public Color getDataSetColor(List<IClockEvent> unsortedEvents);
 	}
 }

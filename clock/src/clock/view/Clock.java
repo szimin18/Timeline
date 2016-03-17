@@ -7,12 +7,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import model.dataset.TimelineDataSet;
-import model.event.TimelineChartData;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
+
 import clock.color.HeatMapColorProvider;
 import clock.grouper.Grouper;
 import clock.grouper.QuantityLeveler;
@@ -21,6 +18,8 @@ import clock.grouper.QuantityLeveler.QuantityLevelProvider;
 import clock.legend.HorizontalLegend;
 import clock.legend.Legend.LegendEntry;
 import clock.legend.VerticalLegend;
+import clock.model.ClockChartData;
+import clock.model.ClockDataSet;
 import clock.model.SliceDescriptor;
 import clock.view.chart.ClockChart;
 import clock.view.chart.ClockChart.ClockChartSelectionEvent;
@@ -30,9 +29,10 @@ import clock.view.size.SizeManagingPane;
 import clock.view.size.layout.HorizontalLayout;
 import clock.view.size.layout.ISizeManagedLayout;
 import clock.view.size.layout.VerticalLayout;
-
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 
 public final class Clock extends Pane {
 	private static final double CHART_HEAT_MINIMUM_VALUE = 0.0;
@@ -41,25 +41,25 @@ public final class Clock extends Pane {
 
 	private final List<IClockSelectionListener> selectionListeners = new ArrayList<>();
 
-	private Map<SliceDescriptor, TimelineChartData> groupedData;
+	private Map<SliceDescriptor, ClockChartData> groupedData;
 
-	private Clock(List<TimelineDataSet> timelineDataSets) {
+	private Clock(List<ClockDataSet> clockDataSets) {
 
 		// clockChart
 
-		groupedData = Grouper.group(timelineDataSets);
+		groupedData = Grouper.group(clockDataSets);
 
 		Set<Integer> allEventsCounts = Sets.newHashSet();
 
-		for (TimelineChartData timelineChartData : groupedData.values()) {
-			allEventsCounts.add(timelineChartData.getEventsCount());
+		for (ClockChartData clockChartData : groupedData.values()) {
+			allEventsCounts.add(clockChartData.getEventsCount());
 		}
 
 		int minimumEventsCount = Ordering.natural().min(allEventsCounts);
 		int maximumEventsCount = Ordering.natural().max(allEventsCounts);
 
-		QuantityLevelProvider quantityLevelProvider = QuantityLeveler.getQuantityLevelProvider(
-				CHART_HEAT_MINIMUM_VALUE, CHART_HEAT_MAXIMUM_VALUE, minimumEventsCount, maximumEventsCount);
+		QuantityLevelProvider quantityLevelProvider = QuantityLeveler.getQuantityLevelProvider(CHART_HEAT_MINIMUM_VALUE,
+				CHART_HEAT_MAXIMUM_VALUE, minimumEventsCount, maximumEventsCount);
 
 		final ClockChart clockChart = new ClockChart(groupedData, quantityLevelProvider);
 
@@ -127,8 +127,8 @@ public final class Clock extends Pane {
 
 	// newInstance
 
-	public static Clock newInstance(List<TimelineDataSet> timelineDataSets) {
-		return new Clock(timelineDataSets);
+	public static Clock newInstance(List<ClockDataSet> clockDataSets) {
+		return new Clock(clockDataSets);
 	}
 
 	// listeners

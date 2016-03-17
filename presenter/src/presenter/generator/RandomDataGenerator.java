@@ -5,25 +5,32 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
-import model.dataset.TimelineDataSet;
-import model.event.TimelineEvent;
+import clock.model.ClockDataSet;
+import clock.model.IClockEvent;
 
 public class RandomDataGenerator {
 	private RandomDataGenerator() {
 		throw new AssertionError();
 	}
 
-	public static TimelineDataSet generateDataSet(Date startDate, Date endDate, int numberOfItemsToGenerate) {
+	public static ClockDataSet generateClockDataSet(Date startDate, Date endDate, int numberOfItemsToGenerate) {
 		long startTime = startDate.getTime();
 		long timeStamps = endDate.getTime() - startTime;
 		Random random = new Random();
 
-		List<TimelineEvent> events = new ArrayList<>();
+		List<IClockEvent> events = new ArrayList<>();
 
 		for (int i = 0; i < numberOfItemsToGenerate; i++) {
-			events.add(TimelineEvent.newInstance(new Date(startTime + Math.abs(random.nextLong() % timeStamps)), null));
+			final Date date = new Date(startTime + Math.abs(random.nextLong() % timeStamps));
+
+			events.add(new IClockEvent() {
+				@Override
+				public Date getDate() {
+					return date;
+				}
+			});
 		}
 
-		return TimelineDataSet.newInstance(events);
+		return ClockDataSet.newInstance(events);
 	}
 }

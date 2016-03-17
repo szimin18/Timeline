@@ -5,22 +5,23 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import model.event.TimelineChartData;
-import model.event.TimelineEvent;
 import clock.model.DayOfWeek;
 import clock.model.SliceDescriptor;
+import clock.model.ClockChartData;
+import clock.model.IClockEvent;
 
 public class ClockSelectionEvent {
-	private final Map<SliceDescriptor, TimelineChartData> groupedData;
+	private final Map<SliceDescriptor, ClockChartData> groupedData;
 
 	private final Set<SliceDescriptor> selectedSlices;
 
-	public ClockSelectionEvent(Map<SliceDescriptor, TimelineChartData> groupedData, Set<SliceDescriptor> selectedSlices) {
+	public ClockSelectionEvent(Map<SliceDescriptor, ClockChartData> groupedData,
+			Set<SliceDescriptor> selectedSlices) {
 		this.groupedData = groupedData;
 		this.selectedSlices = selectedSlices;
 	}
 
-	public Iterable<TimelineEvent> getSelectedEvents() {
+	public Iterable<IClockEvent> getSelectedEvents() {
 		return new ClockEventsIterable(selectedSlices);
 	}
 
@@ -43,7 +44,7 @@ public class ClockSelectionEvent {
 		return selectedEventsCount;
 	}
 
-	private class ClockEventsIterable implements Iterable<TimelineEvent> {
+	private class ClockEventsIterable implements Iterable<IClockEvent> {
 		private Set<SliceDescriptor> selectedSlices;
 
 		private ClockEventsIterable(Set<SliceDescriptor> selectedSlices) {
@@ -51,18 +52,18 @@ public class ClockSelectionEvent {
 		}
 
 		@Override
-		public Iterator<TimelineEvent> iterator() {
-			return new Iterator<TimelineEvent>() {
+		public Iterator<IClockEvent> iterator() {
+			return new Iterator<IClockEvent>() {
 				private final Iterator<SliceDescriptor> outerIterator = selectedSlices.iterator();
 
-				private Iterator<TimelineEvent> innerIterator = Collections.emptyIterator();
+				private Iterator<IClockEvent> innerIterator = Collections.emptyIterator();
 
 				@Override
 				public void remove() {
 				}
 
 				@Override
-				public TimelineEvent next() {
+				public IClockEvent next() {
 					swapIterators();
 
 					return innerIterator.next();

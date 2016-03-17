@@ -5,6 +5,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import clock.grouper.QuantityLeveler.QuantityLevelProvider;
+import clock.model.DayOfWeek;
+import clock.model.SliceDescriptor;
+import clock.model.ClockChartData;
+import clock.view.chart.popup.ChartPopup;
+import clock.view.chart.selection.SlicesSelectionManager;
+import clock.view.chart.selection.SlicesSelectionManager.ISliceSelectionChangeStrategy;
+import clock.view.chart.visual.LabelsVisualManager;
+import clock.view.chart.visual.SlicesVisualManager;
+import clock.view.size.ISizeManagedNode;
 import javafx.event.EventHandler;
 import javafx.geometry.Dimension2D;
 import javafx.scene.Node;
@@ -13,16 +23,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import model.event.TimelineChartData;
-import clock.grouper.QuantityLeveler.QuantityLevelProvider;
-import clock.model.DayOfWeek;
-import clock.model.SliceDescriptor;
-import clock.view.chart.popup.ChartPopup;
-import clock.view.chart.selection.SlicesSelectionManager;
-import clock.view.chart.selection.SlicesSelectionManager.ISliceSelectionChangeStrategy;
-import clock.view.chart.visual.LabelsVisualManager;
-import clock.view.chart.visual.SlicesVisualManager;
-import clock.view.size.ISizeManagedNode;
 
 public class ClockChart extends Canvas implements ISizeManagedNode {
 	private static final int RINGS_COUNT = 9;
@@ -41,7 +41,7 @@ public class ClockChart extends Canvas implements ISizeManagedNode {
 
 	private final GraphicsContext graphicsContext = getGraphicsContext2D();
 
-	private final Map<SliceDescriptor, TimelineChartData> groupedData;
+	private final Map<SliceDescriptor, ClockChartData> groupedData;
 
 	private final ChartPopup chartPopup = new ChartPopup();
 
@@ -55,7 +55,8 @@ public class ClockChart extends Canvas implements ISizeManagedNode {
 
 	private double fontSize = 0.0;
 
-	public ClockChart(Map<SliceDescriptor, TimelineChartData> groupedData, QuantityLevelProvider quantityLevelProvider) {
+	public ClockChart(Map<SliceDescriptor, ClockChartData> groupedData,
+			QuantityLevelProvider quantityLevelProvider) {
 		this.groupedData = groupedData;
 		slicesVisualManager = new SlicesVisualManager(groupedData, quantityLevelProvider);
 		labelsVisualManager = new LabelsVisualManager();

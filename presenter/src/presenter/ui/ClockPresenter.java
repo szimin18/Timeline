@@ -4,15 +4,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-import model.dataset.TimelineDataSet;
-import model.event.TimelineEvent;
-import presenter.generator.RandomDataGenerator;
+import clock.model.ClockDataSet;
+import clock.model.IClockEvent;
 import clock.view.Clock;
 import clock.view.Clock.IClockSelectionListener;
 import clock.view.event.ClockSelectionEvent;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import presenter.generator.RandomDataGenerator;
 
 public class ClockPresenter extends Application {
 
@@ -29,17 +29,17 @@ public class ClockPresenter extends Application {
 
 			long currentTimeMillis = System.currentTimeMillis();
 			long timeRange = yearsInMiliseconds(1);
-			List<TimelineDataSet> timelineDataSets = new ArrayList<TimelineDataSet>();
-			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), eventsPerDataset));
-			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), eventsPerDataset));
-			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), eventsPerDataset));
-			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), eventsPerDataset));
-			timelineDataSets.add(RandomDataGenerator.generateDataSet(new Date(currentTimeMillis - timeRange), new Date(
-					currentTimeMillis), eventsPerDataset));
+			List<ClockDataSet> timelineDataSets = new ArrayList<ClockDataSet>();
+			timelineDataSets.add(RandomDataGenerator.generateClockDataSet(new Date(currentTimeMillis - timeRange),
+					new Date(currentTimeMillis), eventsPerDataset));
+			timelineDataSets.add(RandomDataGenerator.generateClockDataSet(new Date(currentTimeMillis - timeRange),
+					new Date(currentTimeMillis), eventsPerDataset));
+			timelineDataSets.add(RandomDataGenerator.generateClockDataSet(new Date(currentTimeMillis - timeRange),
+					new Date(currentTimeMillis), eventsPerDataset));
+			timelineDataSets.add(RandomDataGenerator.generateClockDataSet(new Date(currentTimeMillis - timeRange),
+					new Date(currentTimeMillis), eventsPerDataset));
+			timelineDataSets.add(RandomDataGenerator.generateClockDataSet(new Date(currentTimeMillis - timeRange),
+					new Date(currentTimeMillis), eventsPerDataset));
 
 			Clock clock = Clock.newInstance(timelineDataSets);
 
@@ -49,8 +49,8 @@ public class ClockPresenter extends Application {
 					System.out.println("Selection changed ------------------");
 					System.out.println("Selected events count: " + event.getSelectedEventsCount());
 					int i = 20;
-					for (TimelineEvent timelineEvent : event.getSelectedEvents()) {
-						System.out.printf("%s # %s\n", timelineEvent.getTid(), timelineEvent.getDate().toString());
+					for (IClockEvent timelineEvent : event.getSelectedEvents()) {
+						System.out.printf("%s\n", timelineEvent.getDate().toString());
 
 						if (--i <= 0) {
 							break;

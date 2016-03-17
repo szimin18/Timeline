@@ -3,19 +3,19 @@ package clock.view.chart.visual;
 import java.util.Map;
 import java.util.Set;
 
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.ArcType;
-import javafx.scene.shape.FillRule;
-import model.event.TimelineChartData;
+import com.google.common.collect.Maps;
+
 import clock.color.HeatMapColorProvider;
 import clock.grouper.QuantityLeveler.QuantityLevelProvider;
 import clock.math.MathChartHelper;
 import clock.model.DayOfWeek;
 import clock.model.SliceDescriptor;
+import clock.model.ClockChartData;
 import clock.view.chart.ClockChart;
-
-import com.google.common.collect.Maps;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.ArcType;
+import javafx.scene.shape.FillRule;
 
 public final class SlicesVisualManager {
 
@@ -29,7 +29,7 @@ public final class SlicesVisualManager {
 
 	private Map<SliceDescriptor, Color> colorsMap = Maps.newHashMap();
 
-	public SlicesVisualManager(Map<SliceDescriptor, TimelineChartData> groupedData,
+	public SlicesVisualManager(Map<SliceDescriptor, ClockChartData> groupedData,
 			QuantityLevelProvider quantityLevelProvider) {
 		for (SliceDescriptor sliceDescriptor : SliceDescriptor.ALL_SLICES) {
 
@@ -52,8 +52,8 @@ public final class SlicesVisualManager {
 			for (int hour = 0; hour < 24; hour++) {
 				Color fillColor = colorsMap.get(SliceDescriptor.forCoordinates(dayOfWeek, hour));
 
-				drawChartPart(graphicsContext, chartMiddleX, chartMiddleY, currentInnerRadius, currentOuterRadius,
-						hour, fillColor);
+				drawChartPart(graphicsContext, chartMiddleX, chartMiddleY, currentInnerRadius, currentOuterRadius, hour,
+						fillColor);
 			}
 
 			currentOuterRadius = currentInnerRadius;
@@ -158,8 +158,8 @@ public final class SlicesVisualManager {
 
 		graphicsContext.beginPath();
 
-		graphicsContext.arc(chartMiddleX, chartMiddleY, innerRadius, innerRadius, (transformedHour + 1)
-				* DEGREES_PER_SLICE, -DEGREES_PER_SLICE);
+		graphicsContext.arc(chartMiddleX, chartMiddleY, innerRadius, innerRadius,
+				(transformedHour + 1) * DEGREES_PER_SLICE, -DEGREES_PER_SLICE);
 		graphicsContext.lineTo(point2X, point2Y);
 		graphicsContext.arc(chartMiddleX, chartMiddleY, outerRadius, outerRadius, transformedHour * DEGREES_PER_SLICE,
 				DEGREES_PER_SLICE);
@@ -178,12 +178,12 @@ public final class SlicesVisualManager {
 
 		double chartSide = 2 * radius;
 
-		graphicsContext.strokeArc(chartMiddleX - radius, chartMiddleY - radius, chartSide, chartSide, transformedHour
-				* DEGREES_PER_SLICE, DEGREES_PER_SLICE, ArcType.OPEN);
+		graphicsContext.strokeArc(chartMiddleX - radius, chartMiddleY - radius, chartSide, chartSide,
+				transformedHour * DEGREES_PER_SLICE, DEGREES_PER_SLICE, ArcType.OPEN);
 	}
 
-	private void drawLine(GraphicsContext graphicsContext, double chartMiddleX, double chartMiddleY,
-			double innerRadius, double outerRadius, int hour, double lineWidth) {
+	private void drawLine(GraphicsContext graphicsContext, double chartMiddleX, double chartMiddleY, double innerRadius,
+			double outerRadius, int hour, double lineWidth) {
 		int transformedHour = (29 - hour) % 24;
 
 		graphicsContext.setStroke(Color.BLACK);
