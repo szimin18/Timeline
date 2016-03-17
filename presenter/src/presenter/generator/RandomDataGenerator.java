@@ -5,8 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
-import clock.model.ClockDataSet;
-import clock.model.IClockEvent;
+import pl.edu.agh.clock.model.ClockDataSet;
+import pl.edu.agh.clock.model.IClockEvent;
 
 public class RandomDataGenerator {
 	private RandomDataGenerator() {

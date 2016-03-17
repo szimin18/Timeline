@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import clock.model.ClockDataSet;
-import clock.model.IClockEvent;
-import clock.view.Clock;
-import clock.view.Clock.IClockSelectionListener;
-import clock.view.event.ClockSelectionEvent;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import pl.edu.agh.clock.model.ClockDataSet;
+import pl.edu.agh.clock.model.IClockEvent;
+import pl.edu.agh.clock.view.Clock;
+import pl.edu.agh.clock.view.Clock.IClockSelectionListener;
+import pl.edu.agh.clock.view.event.ClockSelectionEvent;
 import presenter.generator.RandomDataGenerator;
 
 public class ClockPresenter extends Application {
@@ -23,7 +23,7 @@ public class ClockPresenter extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-			primaryStage.setTitle("Clock test");
+			primaryStage.setTitle("Clock test"); //$NON-NLS-1$
 
 			int eventsPerDataset = 1000;
 
@@ -46,11 +46,11 @@ public class ClockPresenter extends Application {
 			clock.addSelectionListener(new IClockSelectionListener() {
 				@Override
 				public void selectionChanged(ClockSelectionEvent event) {
-					System.out.println("Selection changed ------------------");
-					System.out.println("Selected events count: " + event.getSelectedEventsCount());
+					System.out.println("Selection changed ------------------"); //$NON-NLS-1$
+					System.out.println("Selected events count: " + event.getSelectedEventsCount()); //$NON-NLS-1$
 					int i = 20;
 					for (IClockEvent timelineEvent : event.getSelectedEvents()) {
-						System.out.printf("%s\n", timelineEvent.getDate().toString());
+						System.out.printf("%s\n", timelineEvent.getDate().toString()); //$NON-NLS-1$
 
 						if (--i <= 0) {
 							break;
